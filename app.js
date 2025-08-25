@@ -198,8 +198,6 @@ async function loadPalette(source) {
 
 async function startCamera() {
   try {
-    
-
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" },
     });
