@@ -198,11 +198,7 @@ async function loadPalette(source) {
 
 async function startCamera() {
   try {
-    // --- FIX #1: Lock screen orientation to portrait ---
-    // This should be done before requesting the camera for the best experience.
-    if (screen.orientation && typeof screen.orientation.lock === "function") {
-      await screen.orientation.lock("portrait");
-    }
+    
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" },
