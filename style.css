@@ -33,10 +33,17 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px 0;
-  padding-top: calc(env(safe-area-inset-top, 0) + 20px);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 20px);
   transition: background-color 0.3s ease;
+}
+
+footer.chrome-area {
+  padding-top: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 40px);
+}
+
+header.chrome-area {
+  padding-top: calc(env(safe-area-inset-top, 0) + 60px);
+  padding-bottom: 0;
 }
 
 #palettePreview {
