@@ -50,8 +50,50 @@ const palettePreview = document.getElementById("palettePreview");
 const imageInput = document.getElementById("imageInput");
 const resToggleBtn = document.getElementById("resToggleBtn"); // ADD THIS
 const transitionCanvas = document.getElementById("transitionCanvas"); // ADD THIS
+const reverseCameraBtn = document.getElementById("reverseCameraBtn"); // ADD THIS
+
+// --- Camera Constraints ---
+const frontCameraConstraints = {
+  video: {
+    facingMode: "user",
+  },
+};
+
+const backCameraConstraints = {
+  video: {
+    facingMode: "environment",
+  },
+};
 
 // --- Main App Logic ---
+
+async function _startCameraWithConstraints(constraints) {
+  try {
+    // Stop all tracks on the current stream before starting a new one
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach((track) => track.stop());
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+
+    // --- FIX #2: Explicitly play the video to fix the frozen/looping feed ---
+    // We await this to ensure the video is playing before we start our render loop.
+    await video.play();
+
+    isLive = true;
+    runLiveView(); // Start the render loop
+  } catch (err) {
+    // Handle orientation lock errors or camera permission errors
+    if (err.name === "NotSupportedError") {
+      // Orientation lock failed, but we can continue.
+      console.warn("Screen orientation lock is not supported on this browser.");
+    } else {
+      alert("Could not access the camera. Please grant permission.");
+      console.error("Camera access error:", err);
+    }
+  }
+}
 
 async function processFrame(source) {
   const targetWidth = isLowRes ? LOW_RES_WIDTH : PIXEL_WIDTH;
@@ -361,7 +403,17 @@ async function init() {
   } else {
     // On mobile, the shutter button controls the camera
     shutterBtn.addEventListener("click", handleShutterClickMobile);
-    startCamera(); // Start the camera immediately on mobile
+    let isFrontCamera = false; // State to track current camera
+    _startCameraWithConstraints(backCameraConstraints); // Start with back camera
+
+    reverseCameraBtn.addEventListener("click", () => {
+      triggerHaptic();
+      isFrontCamera = !isFrontCamera;
+      const constraints = isFrontCamera
+        ? frontCameraConstraints
+        : backCameraConstraints;
+      _startCameraWithConstraints(constraints);
+    });
   }
   let pressTimer = null;
 
