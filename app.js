@@ -6,7 +6,7 @@ const PIXEL_WIDTH = 192; // 3 * 64
 const PIXEL_HEIGHT = 256; // 4 * 64
 const LOW_RES_WIDTH = PIXEL_WIDTH / 2; // ADD THIS
 const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2; // ADD THIS
-const FPS = 1;
+const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 250; // How long the fade between frames takes
 
