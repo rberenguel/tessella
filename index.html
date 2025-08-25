@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="media/favicon.ico" type="image/x-icon" />
     <title>Tesseŀla</title>
     <meta
       name="viewport"
@@ -37,7 +38,17 @@
       </main>
 
       <footer class="chrome-area">
-        <button id="shutterBtn" aria-label="Shutter"></button>
+        <div class="button-container">
+          <button id="resToggleBtn" aria-label="Toggle Resolution">
+            <div class="res-icon">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+          <button id="shutterBtn" aria-label="Shutter"></button>
+        </div>
       </footer>
     </div>
 

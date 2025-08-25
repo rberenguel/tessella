@@ -1,9 +1,38 @@
 import { quantize } from "./quantizer.js";
+import { initHaptic, triggerHaptic } from "./haptic.js";
 
 // --- Configuration ---
 const PIXEL_WIDTH = 192; // 3 * 64
 const PIXEL_HEIGHT = 256; // 4 * 64
-const DEFAULT_PALETTES = ["palettes/slso8-32x.png", "palettes/pollen8-32x.png"];
+const LOW_RES_WIDTH = PIXEL_WIDTH / 2; // ADD THIS
+const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2; // ADD THIS
+const FPS = 5;
+const FRAME_INTERVAL = 1000 / FPS;
+const FADE_DURATION_MS = 150; // How long the fade between frames takes
+
+// ls palettes/ | awk '{printf "\"palettes/%s\", ", $1}' | sed 's/, $//' | awk '{print "const DEFAULT_PALETTES = [" $0 "];"}'
+
+const DEFAULT_PALETTES = [
+  "palettes/berry-nebula-32x.png",
+  "palettes/chocomilk-8-32x.png",
+  "palettes/cl8uds-32x.png",
+  "palettes/dawnbringers-8-color-32x.png",
+  "palettes/eulbink-32x.png",
+  "palettes/funkyfuture-8-32x.png",
+  "palettes/hope-diamond-32x.png",
+  "palettes/ink-32x.png",
+  "palettes/inkpink-32x.png",
+  "palettes/kirokaze-gameboy-32x.png",
+  "palettes/midnight-ablaze-32x.png",
+  "palettes/nintendo-gameboy-bgb-32x.png",
+  "palettes/oil-6-32x.png",
+  "palettes/pollen8-32x.png",
+  "palettes/rust-gold-8-32x.png",
+  "palettes/seafoam-32x.png",
+  "palettes/slso8-32x.png",
+  "palettes/twilight-5-32x.png",
+  "palettes/wish-gb-32x.png",
+];
 
 // --- State ---
 let currentPalette = null;
@@ -11,6 +40,7 @@ let currentPaletteIndex = 0;
 let isLive = true;
 let activeRenderLoop = null;
 let frozenFrameSource = null;
+let isLowRes = false;
 
 // --- DOM Elements ---
 const video = document.getElementById("videoFeed");
@@ -18,30 +48,26 @@ const canvas = document.getElementById("displayCanvas");
 const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
 const imageInput = document.getElementById("imageInput");
+const resToggleBtn = document.getElementById("resToggleBtn"); // ADD THIS
 const transitionCanvas = document.getElementById("transitionCanvas"); // ADD THIS
 
 // --- Main App Logic ---
 
 async function processFrame(source) {
-  // (This function replaces the previous processFrame)
-
-  if (!currentPalette || currentPalette.length === 0) {
-    if (!isDesktop) alert("Please load a palette first!");
-    return;
-  }
-
-  //loader.style.display = 'block';
+  const targetWidth = isLowRes ? LOW_RES_WIDTH : PIXEL_WIDTH;
+  const targetHeight = isLowRes ? LOW_RES_HEIGHT : PIXEL_HEIGHT;
   await new Promise((resolve) => setTimeout(resolve, 10));
 
   const lowResCanvas = document.createElement("canvas");
-  lowResCanvas.width = PIXEL_WIDTH;
-  lowResCanvas.height = PIXEL_HEIGHT;
+  lowResCanvas.width = targetWidth;
+  lowResCanvas.height = targetHeight;
   const lowResCtx = lowResCanvas.getContext("2d");
 
   // --- Step 1: Create a correctly oriented temporary source ---
   const sourceWidth = source.videoWidth || source.width;
   const sourceHeight = source.videoHeight || source.height;
-  const needsRotation = sourceWidth > sourceHeight;
+  const needsRotation =
+    screen.orientation && screen.orientation.type.includes("landscape");
 
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
@@ -64,7 +90,7 @@ async function processFrame(source) {
   // --- Step 2: Center-crop the oriented source onto the low-res canvas ---
   const s = { width: tempCanvas.width, height: tempCanvas.height };
   const sRatio = s.width / s.height;
-  const tRatio = PIXEL_WIDTH / PIXEL_HEIGHT;
+  const tRatio = targetWidth / targetHeight;
 
   let sx = 0,
     sy = 0,
@@ -89,12 +115,12 @@ async function processFrame(source) {
     sHeight,
     0,
     0,
-    PIXEL_WIDTH,
-    PIXEL_HEIGHT,
+    targetWidth,
+    targetHeight,
   );
 
   // --- Step 3: Quantize and display (unchanged) ---
-  const imageData = lowResCtx.getImageData(0, 0, PIXEL_WIDTH, PIXEL_HEIGHT);
+  const imageData = lowResCtx.getImageData(0, 0, targetWidth, targetHeight);
   quantize(imageData, currentPalette);
 
   lowResCtx.putImageData(imageData, 0, 0);
@@ -171,56 +197,65 @@ async function loadPalette(source) {
 }
 
 async function startCamera() {
-    try {
-        // --- FIX #1: Lock screen orientation to portrait ---
-        // This should be done before requesting the camera for the best experience.
-        if (screen.orientation && typeof screen.orientation.lock === 'function') {
-            await screen.orientation.lock('portrait');
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-        });
-        video.srcObject = stream;
-        
-        // --- FIX #2: Explicitly play the video to fix the frozen/looping feed ---
-        // We await this to ensure the video is playing before we start our render loop.
-        await video.play();
-        
-        isLive = true;
-        runLiveView(); // Start the render loop
-    } catch (err) {
-        // Handle orientation lock errors or camera permission errors
-        if (err.name === "NotSupportedError") {
-             // Orientation lock failed, but we can continue.
-             console.warn("Screen orientation lock is not supported on this browser.");
-        } else {
-            alert("Could not access the camera. Please grant permission.");
-            console.error("Camera access error:", err);
-        }
+  try {
+    // --- FIX #1: Lock screen orientation to portrait ---
+    // This should be done before requesting the camera for the best experience.
+    if (screen.orientation && typeof screen.orientation.lock === "function") {
+      await screen.orientation.lock("portrait");
     }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+    });
+    video.srcObject = stream;
+
+    // --- FIX #2: Explicitly play the video to fix the frozen/looping feed ---
+    // We await this to ensure the video is playing before we start our render loop.
+    await video.play();
+
+    isLive = true;
+    runLiveView(); // Start the render loop
+  } catch (err) {
+    // Handle orientation lock errors or camera permission errors
+    if (err.name === "NotSupportedError") {
+      // Orientation lock failed, but we can continue.
+      console.warn("Screen orientation lock is not supported on this browser.");
+    } else {
+      alert("Could not access the camera. Please grant permission.");
+      console.error("Camera access error:", err);
+    }
+  }
 }
 
 async function runLiveView() {
-    // This new loop will run as long as the camera is live
-    while (isLive) {
-        await processFrame(video); // Wait for the frame to be fully processed
-        await new Promise(requestAnimationFrame); // Wait for the next browser frame
-    }
+  if (!isLive) return; // Stop the loop if not live
+
+  // --- Crossfade Logic ---
+  // 1. Capture the "before" state onto the top (transition) canvas
+  const transitionCtx = transitionCanvas.getContext("2d");
+  transitionCanvas.width = canvas.width;
+  transitionCanvas.height = canvas.height;
+  // Only draw if the canvas has content, otherwise it's black
+  if (canvas.width > 0) {
+    transitionCtx.drawImage(canvas, 0, 0);
+  }
+
+  // 2. Make the top canvas visible instantly, holding the old frame
+  transitionCanvas.style.transition = "none";
+  transitionCanvas.style.opacity = "1";
+
+  // 3. Process the NEW frame and draw it to the main (hidden) canvas
+  await processFrame(video);
+
+  // 4. Fade the transition canvas out to reveal the new frame
+  transitionCanvas.style.transition = `opacity ${FADE_DURATION_MS}ms ease-out`;
+  transitionCanvas.style.opacity = "0";
+
+  // 5. Schedule the next frame
+  setTimeout(runLiveView, FRAME_INTERVAL);
 }
 
 // --- Event Listeners ---
-
-shutterBtn.addEventListener("click", () => {
-  isLive = !isLive; // Toggle live view
-  if (isLive) {
-    shutterBtn.style.borderColor = "#fff";
-    renderLoop();
-  } else {
-    shutterBtn.style.borderColor = "#000000"; // Black for frozen state
-    cancelAnimationFrame(activeRenderLoop);
-  }
-});
 
 palettePreview.addEventListener("click", async () => {
   const originalPaletteIndex = currentPaletteIndex;
@@ -263,23 +298,25 @@ palettePreview.addEventListener("click", async () => {
 // --- Initialization ---
 
 function handleShutterClickMobile() {
-    isLive = !isLive; // Toggle the live state
+  isLive = !isLive; // Toggle the live state
 
-    if (isLive) {
-        // If we are resuming, restart the loop
-        shutterBtn.style.borderColor = '#fff';
-        runLiveView();
-    } else {
-        // If we are freezing, save the current video frame to our source canvas
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        frozenFrameSource = canvas; // This is the crucial missing step
+  if (isLive) {
+    // If we are resuming, restart the loop
+    shutterBtn.style.borderColor = "#fff";
+    runLiveView();
+  } else {
+    triggerHaptic();
+    setTimeout(() => triggerHaptic(), 50);
+    // If we are freezing, save the current video frame to our source canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    frozenFrameSource = canvas; // This is the crucial missing step
 
-        shutterBtn.style.borderColor = '#34c759';
-        // The `while(isLive)` loop in runLiveView will now stop on its own
-    }
+    shutterBtn.style.borderColor = "#34c759";
+    // The `while(isLive)` loop in runLiveView will now stop on its own
+  }
 }
 
 function handleImageFile(event) {
@@ -298,8 +335,19 @@ function handleImageFile(event) {
   img.src = URL.createObjectURL(file);
 }
 
+resToggleBtn.addEventListener("click", () => {
+  triggerHaptic();
+  isLowRes = !isLowRes;
+  resToggleBtn.classList.toggle("active", isLowRes);
+
+  if (!isLive && frozenFrameSource) {
+    processFrame(frozenFrameSource);
+  }
+});
+
 // --- Main Initialization ---
 async function init() {
+  initHaptic();
   // Load the last used or default palette first
   const savedPalette = localStorage.getItem("savedPalette");
   if (savedPalette) {
@@ -321,6 +369,61 @@ async function init() {
     shutterBtn.addEventListener("click", handleShutterClickMobile);
     startCamera(); // Start the camera immediately on mobile
   }
+  let pressTimer = null;
+
+  const startPress = async (e) => {
+    e.preventDefault();
+
+    pressTimer = setTimeout(async () => {
+      try {
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/png"),
+        );
+        const file = new File([blob], `tessella-${Date.now()}.png`, {
+          type: "image/png",
+        });
+
+        // --- MODIFIED CONDITION ---
+        // Only try to use the Share API if we're on a mobile device
+        if (
+          !isDesktop &&
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [file] })
+        ) {
+          await navigator.share({
+            files: [file],
+            title: "Tesseŀla",
+          });
+        } else {
+          // Fallback to a direct download on desktop or unsupported mobile browsers
+          const link = document.createElement("a");
+          link.download = file.name;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Share/Download failed:", err);
+        }
+      }
+    }, 500);
+  };
+  const cancelPress = () => {
+    clearTimeout(pressTimer);
+  };
+
+  // Attach listeners (this part is unchanged)
+  canvas.addEventListener("mousedown", startPress);
+  canvas.addEventListener("touchstart", startPress, { passive: false });
+
+  canvas.addEventListener("mouseup", cancelPress);
+  canvas.addEventListener("mouseleave", cancelPress);
+  canvas.addEventListener("touchend", cancelPress);
+  canvas.addEventListener("touchcancel", cancelPress);
+
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 }
 
 init();

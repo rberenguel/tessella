@@ -77,6 +77,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
+  user-select: none;
 }
 
 /* Add this new rule for the transition layer */
@@ -88,6 +89,65 @@ body {
 
 #videoFeed {
   display: none; /* We only need it as a data source */
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+/* Add this rule for the new resolution toggle button */
+#resToggleBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #2c2c2e;
+  color: #fff;
+  font-weight: bold;
+  border: 4px solid #555;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Add this style for the button's "active" (low-res) state */
+#resToggleBtn.active {
+  background-color: #444;
+  border-color: #fff;
+}
+
+.res-icon {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease;
+}
+
+/* These are the individual "pixels" of the grid icon */
+.res-icon span {
+  background-color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+/* --- The Magic Toggle --- */
+/* When the button is active (low-res mode)... */
+#resToggleBtn.active .res-icon {
+  gap: 0; /* Remove the gap */
+  background-color: #fff; /* The container itself becomes the solid square */
+}
+
+#resToggleBtn.active .res-icon span {
+  background-color: transparent; /* ...and the individual pixels disappear */
 }
 
 #shutterBtn {
