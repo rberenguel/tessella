@@ -6,7 +6,7 @@ const PIXEL_WIDTH = 192; // 3 * 64
 const PIXEL_HEIGHT = 256; // 4 * 64
 const LOW_RES_WIDTH = PIXEL_WIDTH / 2; // ADD THIS
 const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2; // ADD THIS
-const FPS = 5;
+const FPS = 2;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 150; // How long the fade between frames takes
 
@@ -370,9 +370,27 @@ async function init() {
 
     pressTimer = setTimeout(async () => {
       try {
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/png"),
-        );
+        const blob = await new Promise((resolve) => {
+          const upscaleFactor = isLowRes ? 16 : 8;
+          const upscaledCanvas = document.createElement("canvas");
+          upscaledCanvas.width = canvas.width * upscaleFactor;
+          upscaledCanvas.height = canvas.height * upscaleFactor;
+          const upscaledCtx = upscaledCanvas.getContext("2d");
+
+          upscaledCtx.imageSmoothingEnabled = false;
+          upscaledCtx.drawImage(
+            canvas,
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+            0,
+            0,
+            upscaledCanvas.width,
+            upscaledCanvas.height,
+          );
+          upscaledCanvas.toBlob(resolve, "image/png");
+        });
         const file = new File([blob], `tessella-${Date.now()}.png`, {
           type: "image/png",
         });
