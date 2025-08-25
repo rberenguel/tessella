@@ -171,27 +171,42 @@ async function loadPalette(source) {
 }
 
 async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-    });
-    video.srcObject = stream;
-    await new Promise((resolve) => {
-      video.onloadedmetadata = resolve;
-    });
+    try {
+        // --- FIX #1: Lock screen orientation to portrait ---
+        // This should be done before requesting the camera for the best experience.
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
+            await screen.orientation.lock('portrait');
+        }
 
-    isLive = true;
-    renderLoop();
-  } catch (err) {
-    alert("Could not access the camera. Please grant permission.");
-    console.error("Camera access error:", err);
-  }
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        });
+        video.srcObject = stream;
+        
+        // --- FIX #2: Explicitly play the video to fix the frozen/looping feed ---
+        // We await this to ensure the video is playing before we start our render loop.
+        await video.play();
+        
+        isLive = true;
+        runLiveView(); // Start the render loop
+    } catch (err) {
+        // Handle orientation lock errors or camera permission errors
+        if (err.name === "NotSupportedError") {
+             // Orientation lock failed, but we can continue.
+             console.warn("Screen orientation lock is not supported on this browser.");
+        } else {
+            alert("Could not access the camera. Please grant permission.");
+            console.error("Camera access error:", err);
+        }
+    }
 }
 
-function renderLoop() {
-  if (!isLive) return;
-  processFrame(video);
-  activeRenderLoop = requestAnimationFrame(renderLoop);
+async function runLiveView() {
+    // This new loop will run as long as the camera is live
+    while (isLive) {
+        await processFrame(video); // Wait for the frame to be fully processed
+        await new Promise(requestAnimationFrame); // Wait for the next browser frame
+    }
 }
 
 // --- Event Listeners ---
@@ -248,23 +263,23 @@ palettePreview.addEventListener("click", async () => {
 // --- Initialization ---
 
 function handleShutterClickMobile() {
-  isLive = !isLive; // Toggle live view
-  if (isLive) {
-    shutterBtn.style.borderColor = "#fff";
-    renderLoop();
-  } else {
-    // --- ADD THIS BLOCK ---
-    // Save the current video frame to a temporary canvas
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    frozenFrameSource = canvas;
-    // ----------------------
+    isLive = !isLive; // Toggle the live state
 
-    shutterBtn.style.borderColor = "#34c759";
-    cancelAnimationFrame(activeRenderLoop);
-  }
+    if (isLive) {
+        // If we are resuming, restart the loop
+        shutterBtn.style.borderColor = '#fff';
+        runLiveView();
+    } else {
+        // If we are freezing, save the current video frame to our source canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        frozenFrameSource = canvas; // This is the crucial missing step
+
+        shutterBtn.style.borderColor = '#34c759';
+        // The `while(isLive)` loop in runLiveView will now stop on its own
+    }
 }
 
 function handleImageFile(event) {

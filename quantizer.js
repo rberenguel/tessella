@@ -7,9 +7,11 @@ const colorDistance = (c1, c2) =>
 function kmeans(pixels, k) {
   // 1. Initialize k centroids randomly from the pixel data
   let centroids = [];
-  for (let i = 0; i < k; i++) {
-    centroids.push(pixels[Math.floor(Math.random() * pixels.length)]);
-  }
+    const step = Math.floor(pixels.length / k);
+    for (let i = 0; i < k; i++) {
+    // Pick colors at even intervals instead of randomly
+    centroids.push(pixels[i * step]);
+}
 
   let assignments = new Array(pixels.length);
   for (let iter = 0; iter < 15; iter++) {
