@@ -3,7 +3,7 @@
   "short_name": "Tesseŀla",
   "start_url": ".",
   "author": "Ruben Berenguel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A very pixelated camera with several pixel art palettes from LOSPEC.",
   "display": "standalone",
   "background_color": "#111111",
