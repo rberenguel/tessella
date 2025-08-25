@@ -117,6 +117,17 @@ body {
   justify-content: center;
   align-items: center;
 }
+body.landscape .app-container {
+  transform-origin: center center;
+  transform: rotate(-90deg);
+  width: 100vh; /* Use viewport height for width */
+  height: 100vw; /* Use viewport width for height */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -50vw; /* Half of the new height */
+  margin-left: -50vh; /* Half of the new width */
+}
 
 /* Add this style for the button's "active" (low-res) state */
 #resToggleBtn.active {

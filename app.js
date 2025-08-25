@@ -424,6 +424,14 @@ async function init() {
   canvas.addEventListener("touchcancel", cancelPress);
 
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  const handleOrientation = () => {
+    const isLandscape = window.innerWidth > window.innerHeight;
+    document.body.classList.toggle("landscape", isLandscape);
+  };
+
+  window.addEventListener("resize", handleOrientation);
+  handleOrientation(); // Initial check
 }
 
 init();
