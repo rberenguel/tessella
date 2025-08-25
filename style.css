@@ -132,10 +132,8 @@ body.landscape .app-container {
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-top: -50vw; /* Half of the new height */
-  margin-left: -50vh; /* Half of the new width */
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  margin-top: calc(-50vw + env(safe-area-inset-left, 0px));
+  margin-left: calc(-50vh + env(safe-area-inset-bottom, 0px));
 }
 
 /* Add this style for the button's "active" (low-res) state */
