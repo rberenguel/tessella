@@ -5,6 +5,15 @@ const colorDistance = (c1, c2) =>
 
 // --- K-Means Clustering ---
 function kmeans(pixels, k) {
+  // Create a set of unique colors for deterministic re-initialization
+  const uniqueColorsSet = new Set();
+  for (const pixel of pixels) {
+    uniqueColorsSet.add(pixel.toString());
+  }
+  const uniqueColors = Array.from(uniqueColorsSet).map((str) =>
+    str.split(",").map(Number),
+  );
+
   // 1. Initialize k centroids randomly from the pixel data
   let centroids = [];
   const step = Math.floor(pixels.length / k);
@@ -44,8 +53,8 @@ function kmeans(pixels, k) {
         newCentroids[i][1] /= counts[i];
         newCentroids[i][2] /= counts[i];
       } else {
-        // Handle empty clusters
-        newCentroids[i] = pixels[Math.floor(Math.random() * pixels.length)];
+        // Handle empty clusters deterministically by picking from unique colors
+        newCentroids[i] = uniqueColors[(iter * k + i) % uniqueColors.length];
       }
     }
 
