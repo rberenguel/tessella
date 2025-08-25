@@ -1,0 +1,114 @@
+:root {
+  --chrome-bg: #111;
+  --chrome-fg: #eee;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--chrome-bg);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.app-container {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: 100%;
+  height: 90vh; /* Set height relative to the viewport */
+
+  position: relative;
+  margin: auto;
+  max-width: 430px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  aspect-ratio: 9 / 16;
+}
+
+.chrome-area {
+  background-color: var(--chrome-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+  padding-top: calc(env(safe-area-inset-top, 0) + 20px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 20px);
+  transition: background-color 0.3s ease;
+}
+
+#palettePreview {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.viewfinder {
+  position: relative;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+}
+
+/* This rule now applies to BOTH canvases */
+#displayCanvas,
+#transitionCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Add this new rule for the transition layer */
+#transitionCanvas {
+  opacity: 0;
+  pointer-events: none; /* Ensures it can't be clicked */
+  transition: opacity 0.3s ease-in-out;
+}
+
+#videoFeed {
+  display: none; /* We only need it as a data source */
+}
+
+#shutterBtn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #e23d28;
+  border: 4px solid #fff;
+  box-shadow:
+    0 5px 10px rgba(0, 0, 0, 0.3),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+#shutterBtn:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
