@@ -147,7 +147,6 @@ header.chrome-area {
   content: "⇄"; /* Unicode for two-headed arrow */
 }
 
-
 /* Add this style for the button's "active" (low-res) state */
 #resToggleBtn.active {
   background-color: #444;

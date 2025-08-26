@@ -10,27 +10,58 @@ const FPS = 2;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 250;
 
+// ls palettes/ | awk '{printf "\"palettes/%s\", ", $1}' | sed 's/, $//' | awk '{print "const DEFAULT_PALETTES = [" $0 "];"}'
+
 const DEFAULT_PALETTES = [
   "palettes/berry-nebula-32x.png",
   "palettes/chocomilk-8-32x.png",
   "palettes/cl8uds-32x.png",
   "palettes/dawnbringers-8-color-32x.png",
   "palettes/eulbink-32x.png",
+  "palettes/fading-16-32x.png",
   "palettes/funkyfuture-8-32x.png",
+  "palettes/galaxy-flame-32x.png",
   "palettes/hope-diamond-32x.png",
   "palettes/ink-32x.png",
+  "palettes/ink-crimson-32x-1.png",
+  "palettes/ink-crimson-32x.png",
   "palettes/inkpink-32x.png",
+  "palettes/japanese-woodblock-32x.png",
   "palettes/kirokaze-gameboy-32x.png",
+  "palettes/lost-century-32x.png",
   "palettes/midnight-ablaze-32x.png",
+  "palettes/mushroom-32x.png",
+  "palettes/na16-32x.png",
   "palettes/nintendo-gameboy-bgb-32x.png",
   "palettes/oil-6-32x.png",
   "palettes/pollen8-32x.png",
   "palettes/rust-gold-8-32x.png",
   "palettes/seafoam-32x.png",
+  "palettes/sirens-at-night-32x.png",
   "palettes/slso8-32x.png",
+  "palettes/steam-lords-32x.png",
   "palettes/twilight-5-32x.png",
   "palettes/wish-gb-32x.png",
 ];
+
+// --- Layout Constants ---
+// All values are based on a "unit" that is 1% of the screen's shortest dimension.
+// This provides a stable, consistent base for the entire layout.
+const LAYOUT = {
+  // Chrome band sizes (in units)
+  PORTRAIT_TOP_CHROME_H: 20,
+  PORTRAIT_BOTTOM_CHROME_H: 32,
+  LANDSCAPE_SIDE_CHROME_W: 30,
+
+  // UI element sizes (in units)
+  SHUTTER_RADIUS: 8.5,
+  BUTTON_RADIUS: 5,
+  SWATCH_SIZE: 5,
+  PADDING: 2.5,
+
+  // UI element spacing (in units)
+  BUTTON_GAP: 22, // Increased from ~16 to create more space
+};
 
 // --- State ---
 let currentPalette = null;
@@ -95,11 +126,19 @@ async function processFrame(source) {
 
   // Set target dimensions based on the viewport's orientation
   const targetWidth = isLowRes
-    ? (isViewLandscape ? LOW_RES_HEIGHT : LOW_RES_WIDTH)
-    : (isViewLandscape ? PIXEL_HEIGHT : PIXEL_WIDTH);
+    ? isViewLandscape
+      ? LOW_RES_HEIGHT
+      : LOW_RES_WIDTH
+    : isViewLandscape
+      ? PIXEL_HEIGHT
+      : PIXEL_WIDTH;
   const targetHeight = isLowRes
-    ? (isViewLandscape ? LOW_RES_WIDTH : LOW_RES_HEIGHT)
-    : (isViewLandscape ? PIXEL_WIDTH : PIXEL_HEIGHT);
+    ? isViewLandscape
+      ? LOW_RES_WIDTH
+      : LOW_RES_HEIGHT
+    : isViewLandscape
+      ? PIXEL_WIDTH
+      : PIXEL_HEIGHT;
 
   const processedCanvas = document.createElement("canvas");
   processedCanvas.width = targetWidth;
@@ -171,35 +210,31 @@ async function drawScene(source) {
   const w = canvas.width;
   const h = canvas.height;
   const isLandscape = w > h;
-  const shortDim = isLandscape ? h : w;
+  const unit = Math.min(w, h) / 100;
 
-  // 1. Define UI sizes from a single, stable source.
-  const shutterSize = shortDim * 0.18;
-  const swatchSize = shortDim * 0.08;
-  const padding = shortDim * 0.04;
+  // Define layout areas using the global LAYOUT constants
+  const topChrome = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
+  const bottomChrome = LAYOUT.PORTRAIT_BOTTOM_CHROME_H * unit;
+  const sideChrome = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
 
-  // 2. Define chrome areas based on the UI sizes they must contain.
   let viewfinder;
   if (isLandscape) {
-    const sideChromeWidth = shutterSize + padding * 2;
     viewfinder = {
-      x: sideChromeWidth,
+      x: sideChrome,
       y: 0,
-      width: w - sideChromeWidth * 2,
+      width: w - sideChrome * 2,
       height: h,
     };
   } else {
-    const topChromeHeight = swatchSize + padding * 2;
-    const bottomChromeHeight = shutterSize + padding * 2;
     viewfinder = {
       x: 0,
-      y: topChromeHeight,
+      y: topChrome,
       width: w,
-      height: h - topChromeHeight - bottomChromeHeight,
+      height: h - topChrome - bottomChrome,
     };
   }
 
-  // 3. Draw the video to cover the available viewfinder area.
+  // Draw video to cover the available viewfinder area
   const vRatio = viewfinder.width / viewfinder.height;
   const pRatio = processedCanvas.width / processedCanvas.height;
   let sx, sy, sWidth, sHeight;
@@ -258,52 +293,57 @@ function drawUI(ctx) {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
   const isLandscape = w > h;
-  const shortDim = isLandscape ? h : w;
+  const unit = Math.min(w, h) / 100;
 
-  // Define UI sizes from a single, stable source. These values are identical
-  // to those in drawScene, ensuring consistency.
-  const shutterSize = shortDim * 0.18;
-  const buttonSize = shutterSize * 0.55;
-  const swatchSize = shortDim * 0.08;
-  const padding = shortDim * 0.04;
+  // Read all UI sizes and spacing from the global LAYOUT object
+  const shutterRadius = LAYOUT.SHUTTER_RADIUS * unit;
+  const buttonRadius = LAYOUT.BUTTON_RADIUS * unit;
+  const swatchSize = LAYOUT.SWATCH_SIZE * unit;
+  const padding = LAYOUT.PADDING * unit;
+  const buttonGap = LAYOUT.BUTTON_GAP * unit;
 
   if (isLandscape) {
-    const sideChromeWidth = shutterSize + padding * 2;
-    // Position UI within the calculated chrome bands
+    const sideChromeWidth = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
     drawPalette(ctx, sideChromeWidth / 2, h / 2, swatchSize, padding, true);
     if (!isDesktop) {
       drawButtons(
         ctx,
         w - sideChromeWidth / 2,
         h / 2,
-        buttonSize,
-        shutterSize,
+        buttonRadius * 2,
+        shutterRadius * 2,
         true,
+        buttonGap,
       );
     } else {
-      drawDesktopShutter(ctx, w - sideChromeWidth / 2, h / 2, shutterSize);
+      drawDesktopShutter(
+        ctx,
+        w - sideChromeWidth / 2,
+        h / 2,
+        shutterRadius * 2,
+      );
     }
   } else {
     // Portrait
-    const topChromeHeight = swatchSize + padding * 2;
-    const bottomChromeHeight = shutterSize + padding * 2;
-    // Position UI within the calculated chrome bands
+    const topChromeHeight = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
+    const bottomChromeHeight = LAYOUT.PORTRAIT_BOTTOM_CHROME_H * unit;
     drawPalette(ctx, w / 2, topChromeHeight / 2, swatchSize, padding, false);
     if (!isDesktop) {
       drawButtons(
         ctx,
         w / 2,
         h - bottomChromeHeight / 2,
-        buttonSize,
-        shutterSize,
+        buttonRadius * 2,
+        shutterRadius * 2,
         false,
+        buttonGap,
       );
     } else {
       drawDesktopShutter(
         ctx,
         w / 2,
         h - bottomChromeHeight / 2,
-        shutterSize,
+        shutterRadius * 2,
       );
     }
   }
@@ -334,13 +374,19 @@ function drawPalette(ctx, x, y, size, padding, isVertical = false) {
   });
 }
 
-function drawButtons(ctx, x, y, size, shutterSize, isVertical = false) {
-  const gap = size * 3;
-
+function drawButtons(
+  ctx,
+  x,
+  y,
+  size,
+  shutterSize,
+  isVertical = false,
+  gap = 0,
+) {
   // Shutter button (center)
-  uiBounds.shutter = { x: x, y: y, r: shutterSize, type: "shutter" };
+  uiBounds.shutter = { x: x, y: y, r: shutterSize / 2, type: "shutter" };
   ctx.beginPath();
-  ctx.arc(x, y, shutterSize, 0, 2 * Math.PI);
+  ctx.arc(x, y, shutterSize / 2, 0, 2 * Math.PI);
   ctx.fillStyle = isLive ? "#e23d28" : "#34c759";
   ctx.fill();
   ctx.strokeStyle = "#fff";
@@ -350,16 +396,21 @@ function drawButtons(ctx, x, y, size, shutterSize, isVertical = false) {
   // Resolution Toggle button
   const resX = x + (isVertical ? 0 : -gap);
   const resY = y + (isVertical ? -gap : 0);
-  uiBounds.resToggle = { x: resX, y: resY, r: size, type: "resToggle" };
+  uiBounds.resToggle = { x: resX, y: resY, r: size / 2, type: "resToggle" };
   ctx.beginPath();
-  ctx.arc(resX, resY, size, 0, 2 * Math.PI);
+  ctx.arc(resX, resY, size / 2, 0, 2 * Math.PI);
   ctx.fillStyle = "#2c2c2e";
   ctx.fill();
   ctx.strokeStyle = isLowRes ? "#fff" : "#555";
   ctx.stroke();
   ctx.fillStyle = "#fff";
   if (isLowRes) {
-    ctx.fillRect(resX - size * 0.25, resY - size * 0.25, size * 0.5, size * 0.5);
+    ctx.fillRect(
+      resX - size * 0.25,
+      resY - size * 0.25,
+      size * 0.5,
+      size * 0.5,
+    );
   } else {
     const s = size * 0.18;
     ctx.fillRect(resX - s * 1.5, resY - s * 1.5, s, s);
@@ -371,9 +422,14 @@ function drawButtons(ctx, x, y, size, shutterSize, isVertical = false) {
   // Reverse Camera button
   const revX = x + (isVertical ? 0 : gap);
   const revY = y + (isVertical ? gap : 0);
-  uiBounds.reverseCamera = { x: revX, y: revY, r: size, type: "reverseCamera" };
+  uiBounds.reverseCamera = {
+    x: revX,
+    y: revY,
+    r: size / 2,
+    type: "reverseCamera",
+  };
   ctx.beginPath();
-  ctx.arc(revX, revY, size, 0, 2 * Math.PI);
+  ctx.arc(revX, revY, size / 2, 0, 2 * Math.PI);
   ctx.fillStyle = "#2c2c2e";
   ctx.fill();
   ctx.strokeStyle = "#555";
@@ -381,33 +437,33 @@ function drawButtons(ctx, x, y, size, shutterSize, isVertical = false) {
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(revX, revY, size * 0.5, -Math.PI * 0.25, Math.PI * 0.75);
+  ctx.arc(revX, revY, size * 0.25, -Math.PI * 0.25, Math.PI * 0.75);
   ctx.moveTo(
-    revX + size * 0.5 * Math.cos(Math.PI * 0.75) + 4,
-    revY + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
+    revX + size * 0.25 * Math.cos(Math.PI * 0.75) + 4,
+    revY + size * 0.25 * Math.sin(Math.PI * 0.75) - 4,
   );
   ctx.lineTo(
-    revX + size * 0.5 * Math.cos(Math.PI * 0.75),
-    revY + size * 0.5 * Math.sin(Math.PI * 0.75),
+    revX + size * 0.25 * Math.cos(Math.PI * 0.75),
+    revY + size * 0.25 * Math.sin(Math.PI * 0.75),
   );
   ctx.lineTo(
-    revX + size * 0.5 * Math.cos(Math.PI * 0.75) - 4,
-    revY + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
+    revX + size * 0.25 * Math.cos(Math.PI * 0.75) - 4,
+    revY + size * 0.25 * Math.sin(Math.PI * 0.75) - 4,
   );
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(revX, revY, size * 0.5, Math.PI * 0.75, -Math.PI * 0.25);
+  ctx.arc(revX, revY, size * 0.25, Math.PI * 0.75, -Math.PI * 0.25);
   ctx.moveTo(
-    revX + size * 0.5 * Math.cos(-Math.PI * 0.25) - 4,
-    revY + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
+    revX + size * 0.25 * Math.cos(-Math.PI * 0.25) - 4,
+    revY + size * 0.25 * Math.sin(-Math.PI * 0.25) + 4,
   );
   ctx.lineTo(
-    revX + size * 0.5 * Math.cos(-Math.PI * 0.25),
-    revY + size * 0.5 * Math.sin(-Math.PI * 0.25),
+    revX + size * 0.25 * Math.cos(-Math.PI * 0.25),
+    revY + size * 0.25 * Math.sin(-Math.PI * 0.25),
   );
   ctx.lineTo(
-    revX + size * 0.5 * Math.cos(-Math.PI * 0.25) + 4,
-    revY + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
+    revX + size * 0.25 * Math.cos(-Math.PI * 0.25) + 4,
+    revY + size * 0.25 * Math.sin(-Math.PI * 0.25) + 4,
   );
   ctx.stroke();
 }
@@ -618,7 +674,7 @@ async function init() {
           const upscaleFactor = 8;
           const upscaledCanvas = document.createElement("canvas");
           upscaledCanvas.width = lastProcessedFrame.width * upscaleFactor;
-  
+
           upscaledCanvas.height = lastProcessedFrame.height * upscaleFactor;
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;

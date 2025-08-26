@@ -15,20 +15,21 @@
       content="black-translucent"
     />
     <meta name="theme-color" content="#111111" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="canvas.css" />
   </head>
   <body>
+    <!-- The main container for the app's visual output -->
     <div class="app-container">
-      <header class="chrome-area">
-        <label for="paletteInput" id="palettePreview"></label>
-      </header>
-
       <main class="viewfinder">
         <div class="canvas-container">
+          <!-- The primary canvas for displaying the video feed and UI -->
           <canvas id="displayCanvas"></canvas>
+          <!-- A secondary canvas used for smooth transitions between frames -->
           <canvas id="transitionCanvas"></canvas>
         </div>
+        <!-- The video element remains hidden, serving only as a data source -->
         <video id="videoFeed" playsinline autoplay muted></video>
+        <!-- The file input is also hidden, triggered programmatically for desktop use -->
         <input
           type="file"
           id="imageInput"
@@ -36,23 +37,9 @@
           style="display: none"
         />
       </main>
-
-      <footer class="chrome-area">
-        <div class="button-container">
-          <button id="resToggleBtn" aria-label="Toggle Resolution">
-            <div class="res-icon">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </button>
-          <button id="shutterBtn" aria-label="Shutter"></button>
-          <button id="reverseCameraBtn" aria-label="Reverse Camera"></button>
-        </div>
-      </footer>
     </div>
 
-    <script src="app.js" type="module"></script>
+    <!-- The main application logic -->
+    <script src="canvas.js" type="module"></script>
   </body>
 </html>
