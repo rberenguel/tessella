@@ -146,16 +146,7 @@ header.chrome-area {
   /* Add a camera icon or text */
   content: "⇄"; /* Unicode for two-headed arrow */
 }
-body.landscape canvas {
-  transform-origin: 0;
-  transform: rotate(-90deg);
-  /*width: max(100vw, 100vh);
-height: max(100vw, 100vh);*/
-  position: absolute;
-  left: 50% !important;
-  /* margin-top: calc(-50vw + env(safe-area-inset-left, 0px));
-  margin-left: calc(-50vh + env(safe-area-inset-bottom, 0px));*/
-}
+
 
 /* Add this style for the button's "active" (low-res) state */
 #resToggleBtn.active {

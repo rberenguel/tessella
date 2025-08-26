@@ -91,8 +91,15 @@ async function startCameraWithConstraints(constraints) {
  * @returns {Promise<HTMLCanvasElement>} A canvas with the processed frame.
  */
 async function processFrame(source) {
-  const targetWidth = isLowRes ? LOW_RES_WIDTH : PIXEL_WIDTH;
-  const targetHeight = isLowRes ? LOW_RES_HEIGHT : PIXEL_HEIGHT;
+  const isViewLandscape = window.innerWidth > window.innerHeight;
+
+  // Set target dimensions based on the viewport's orientation
+  const targetWidth = isLowRes
+    ? (isViewLandscape ? LOW_RES_HEIGHT : LOW_RES_WIDTH)
+    : (isViewLandscape ? PIXEL_HEIGHT : PIXEL_WIDTH);
+  const targetHeight = isLowRes
+    ? (isViewLandscape ? LOW_RES_WIDTH : LOW_RES_HEIGHT)
+    : (isViewLandscape ? PIXEL_WIDTH : PIXEL_HEIGHT);
 
   const processedCanvas = document.createElement("canvas");
   processedCanvas.width = targetWidth;
@@ -104,8 +111,6 @@ async function processFrame(source) {
 
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
-  const isLandscape = document.body.classList.contains("landscape");
-
   tempCanvas.width = sourceWidth;
   tempCanvas.height = sourceHeight;
   tempCtx.drawImage(source, 0, 0);
@@ -117,6 +122,7 @@ async function processFrame(source) {
     sWidth = tempCanvas.width,
     sHeight = tempCanvas.height;
 
+  // Crop the source video to match the target aspect ratio
   if (sRatio > tRatio) {
     sWidth = tempCanvas.height * tRatio;
     sx = (tempCanvas.width - sWidth) / 2;
@@ -156,77 +162,69 @@ async function drawScene(source) {
     return;
   }
   const processedCanvas = await processFrame(source);
-  lastProcessedFrame = processedCanvas; // Store the clean frame
+  lastProcessedFrame = processedCanvas;
   const displayCtx = canvas.getContext("2d");
-
-  //canvas.width = canvas.clientWidth;
-  //canvas.height = canvas.clientHeight;
 
   displayCtx.imageSmoothingEnabled = false;
   displayCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const isLandscape = document.body.classList.contains("landscape");
+  const w = canvas.width;
+  const h = canvas.height;
+  const isLandscape = w > h;
+  const shortDim = isLandscape ? h : w;
 
+  // 1. Define UI sizes from a single, stable source.
+  const shutterSize = shortDim * 0.18;
+  const swatchSize = shortDim * 0.08;
+  const padding = shortDim * 0.04;
+
+  // 2. Define chrome areas based on the UI sizes they must contain.
+  let viewfinder;
   if (isLandscape) {
-    displayCtx.save();
-    //displayCtx.translate(canvas.width / 2, canvas.height / 2);
-    displayCtx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
-
-    // Calculate scaling to fit the portrait-oriented processedCanvas into the rotated landscape canvas
-    const processedRatio = processedCanvas.width / processedCanvas.height;
-
-    // In landscape, the canvas's physical width becomes the effective height for the portrait content,
-    // and the physical height becomes the effective width.
-    const targetWidthRotated = canvas.height; // Effective width for portrait content
-    const targetHeightRotated = canvas.width; // Effective height for portrait content
-    const targetRatioRotated = targetWidthRotated / targetHeightRotated;
-
-    let drawWidth, drawHeight;
-    if (processedRatio > targetRatioRotated) {
-      // Processed image is wider relative to its height than the target rotated area
-      // Fit by height: drawHeight should be targetHeightRotated
-      drawHeight = targetHeightRotated;
-      drawWidth = targetHeightRotated * processedRatio;
-    } else {
-      // Processed image is taller relative to its width than the target rotated area
-      // Fit by width: drawWidth should be targetWidthRotated
-      drawWidth = targetWidthRotated;
-      drawHeight = targetWidthRotated / processedRatio;
-    }
-
-    displayCtx.drawImage(
-      processedCanvas,
-      0,
-      -drawHeight / 2,
-      targetWidthRotated,
-      targetHeightRotated,
-    );
-    displayCtx.restore();
+    const sideChromeWidth = shutterSize + padding * 2;
+    viewfinder = {
+      x: sideChromeWidth,
+      y: 0,
+      width: w - sideChromeWidth * 2,
+      height: h,
+    };
   } else {
-    // Portrait mode: draw directly, scaling to fit
-    const processedRatio = processedCanvas.width / processedCanvas.height;
-    const canvasRatio = canvas.width / canvas.height;
-
-    let drawWidth, drawHeight;
-    if (processedRatio > canvasRatio) {
-      drawWidth = canvas.width;
-      drawHeight = canvas.width / processedRatio;
-    } else {
-      drawHeight = canvas.height;
-      drawWidth = canvas.height * processedRatio;
-    }
-
-    const offsetX = (canvas.width - drawWidth) / 2;
-    const offsetY = (canvas.height - drawHeight) / 2;
-
-    displayCtx.drawImage(
-      processedCanvas,
-      offsetX,
-      offsetY,
-      drawWidth,
-      drawHeight,
-    );
+    const topChromeHeight = swatchSize + padding * 2;
+    const bottomChromeHeight = shutterSize + padding * 2;
+    viewfinder = {
+      x: 0,
+      y: topChromeHeight,
+      width: w,
+      height: h - topChromeHeight - bottomChromeHeight,
+    };
   }
+
+  // 3. Draw the video to cover the available viewfinder area.
+  const vRatio = viewfinder.width / viewfinder.height;
+  const pRatio = processedCanvas.width / processedCanvas.height;
+  let sx, sy, sWidth, sHeight;
+  if (pRatio > vRatio) {
+    sHeight = processedCanvas.height;
+    sWidth = sHeight * vRatio;
+    sx = (processedCanvas.width - sWidth) / 2;
+    sy = 0;
+  } else {
+    sWidth = processedCanvas.width;
+    sHeight = sWidth / vRatio;
+    sx = 0;
+    sy = (processedCanvas.height - sHeight) / 2;
+  }
+  displayCtx.drawImage(
+    processedCanvas,
+    sx,
+    sy,
+    sWidth,
+    sHeight,
+    viewfinder.x,
+    viewfinder.y,
+    viewfinder.width,
+    viewfinder.height,
+  );
 
   drawUI(displayCtx);
 }
@@ -259,47 +257,87 @@ async function runLiveView() {
 function drawUI(ctx) {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
-  const padding = h * 0.02;
-  const buttonY = h - h * 0.1;
-  const paletteY = h * 0.05;
-  const buttonRowX = w / 2;
-  const paletteRowX = w / 2;
-  const buttonSize = h * 0.035;
-  const shutterSize = h * 0.05;
-  const swatchSize = h * 0.025;
+  const isLandscape = w > h;
+  const shortDim = isLandscape ? h : w;
 
-  drawPalette(ctx, paletteRowX, paletteY, swatchSize, padding);
+  // Define UI sizes from a single, stable source. These values are identical
+  // to those in drawScene, ensuring consistency.
+  const shutterSize = shortDim * 0.18;
+  const buttonSize = shutterSize * 0.55;
+  const swatchSize = shortDim * 0.08;
+  const padding = shortDim * 0.04;
 
-  if (!isDesktop) {
-    drawButtons(ctx, buttonRowX, buttonY, buttonSize, shutterSize);
+  if (isLandscape) {
+    const sideChromeWidth = shutterSize + padding * 2;
+    // Position UI within the calculated chrome bands
+    drawPalette(ctx, sideChromeWidth / 2, h / 2, swatchSize, padding, true);
+    if (!isDesktop) {
+      drawButtons(
+        ctx,
+        w - sideChromeWidth / 2,
+        h / 2,
+        buttonSize,
+        shutterSize,
+        true,
+      );
+    } else {
+      drawDesktopShutter(ctx, w - sideChromeWidth / 2, h / 2, shutterSize);
+    }
   } else {
-    drawDesktopShutter(ctx, buttonRowX, buttonY, shutterSize);
+    // Portrait
+    const topChromeHeight = swatchSize + padding * 2;
+    const bottomChromeHeight = shutterSize + padding * 2;
+    // Position UI within the calculated chrome bands
+    drawPalette(ctx, w / 2, topChromeHeight / 2, swatchSize, padding, false);
+    if (!isDesktop) {
+      drawButtons(
+        ctx,
+        w / 2,
+        h - bottomChromeHeight / 2,
+        buttonSize,
+        shutterSize,
+        false,
+      );
+    } else {
+      drawDesktopShutter(
+        ctx,
+        w / 2,
+        h - bottomChromeHeight / 2,
+        shutterSize,
+      );
+    }
   }
 }
 
-function drawPalette(ctx, x, y, size, padding) {
-  const totalWidth = currentPalette.length * (size + padding) - padding;
-  const startX = x - totalWidth / 2;
-  const startY = y - size / 2;
+function drawPalette(ctx, x, y, size, padding, isVertical = false) {
+  const totalLength = currentPalette.length * (size + padding) - padding;
+  const startX = isVertical ? x - size / 2 : x - totalLength / 2;
+  const startY = isVertical ? y - totalLength / 2 : y - size / 2;
+
   uiBounds.palette = {
     x: startX,
     y: startY,
-    w: totalWidth,
-    h: size,
+    w: isVertical ? size : totalLength,
+    h: isVertical ? totalLength : size,
     type: "palette",
   };
+
   currentPalette.forEach((color, i) => {
-    const swatchX = startX + i * (size + padding);
+    const offset = i * (size + padding);
+    const swatchX = startX + (isVertical ? 0 : offset);
+    const swatchY = startY + (isVertical ? offset : 0);
     ctx.fillStyle = `rgb(${color.join(",")})`;
-    ctx.fillRect(swatchX, startY, size, size);
+    ctx.fillRect(swatchX, swatchY, size, size);
     ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     ctx.lineWidth = 2;
-    ctx.strokeRect(swatchX, startY, size, size);
+    ctx.strokeRect(swatchX, swatchY, size, size);
   });
 }
 
-function drawButtons(ctx, x, y, size, shutterSize) {
+function drawButtons(ctx, x, y, size, shutterSize, isVertical = false) {
   const gap = size * 3;
+
+  // Shutter button (center)
   uiBounds.shutter = { x: x, y: y, r: shutterSize, type: "shutter" };
   ctx.beginPath();
   ctx.arc(x, y, shutterSize, 0, 2 * Math.PI);
@@ -309,29 +347,33 @@ function drawButtons(ctx, x, y, size, shutterSize) {
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  const resX = x - gap;
-  uiBounds.resToggle = { x: resX, y: y, r: size, type: "resToggle" };
+  // Resolution Toggle button
+  const resX = x + (isVertical ? 0 : -gap);
+  const resY = y + (isVertical ? -gap : 0);
+  uiBounds.resToggle = { x: resX, y: resY, r: size, type: "resToggle" };
   ctx.beginPath();
-  ctx.arc(resX, y, size, 0, 2 * Math.PI);
+  ctx.arc(resX, resY, size, 0, 2 * Math.PI);
   ctx.fillStyle = "#2c2c2e";
   ctx.fill();
   ctx.strokeStyle = isLowRes ? "#fff" : "#555";
   ctx.stroke();
   ctx.fillStyle = "#fff";
   if (isLowRes) {
-    ctx.fillRect(resX - size * 0.25, y - size * 0.25, size * 0.5, size * 0.5);
+    ctx.fillRect(resX - size * 0.25, resY - size * 0.25, size * 0.5, size * 0.5);
   } else {
     const s = size * 0.18;
-    ctx.fillRect(resX - s * 1.5, y - s * 1.5, s, s);
-    ctx.fillRect(resX + s * 0.5, y - s * 1.5, s, s);
-    ctx.fillRect(resX - s * 1.5, y + s * 0.5, s, s);
-    ctx.fillRect(resX + s * 0.5, y + s * 0.5, s, s);
+    ctx.fillRect(resX - s * 1.5, resY - s * 1.5, s, s);
+    ctx.fillRect(resX + s * 0.5, resY - s * 1.5, s, s);
+    ctx.fillRect(resX - s * 1.5, resY + s * 0.5, s, s);
+    ctx.fillRect(resX + s * 0.5, resY + s * 0.5, s, s);
   }
 
-  const revX = x + gap;
-  uiBounds.reverseCamera = { x: revX, y: y, r: size, type: "reverseCamera" };
+  // Reverse Camera button
+  const revX = x + (isVertical ? 0 : gap);
+  const revY = y + (isVertical ? gap : 0);
+  uiBounds.reverseCamera = { x: revX, y: revY, r: size, type: "reverseCamera" };
   ctx.beginPath();
-  ctx.arc(revX, y, size, 0, 2 * Math.PI);
+  ctx.arc(revX, revY, size, 0, 2 * Math.PI);
   ctx.fillStyle = "#2c2c2e";
   ctx.fill();
   ctx.strokeStyle = "#555";
@@ -339,33 +381,33 @@ function drawButtons(ctx, x, y, size, shutterSize) {
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(revX, y, size * 0.5, -Math.PI * 0.25, Math.PI * 0.75);
+  ctx.arc(revX, revY, size * 0.5, -Math.PI * 0.25, Math.PI * 0.75);
   ctx.moveTo(
     revX + size * 0.5 * Math.cos(Math.PI * 0.75) + 4,
-    y + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
+    revY + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
   );
   ctx.lineTo(
     revX + size * 0.5 * Math.cos(Math.PI * 0.75),
-    y + size * 0.5 * Math.sin(Math.PI * 0.75),
+    revY + size * 0.5 * Math.sin(Math.PI * 0.75),
   );
   ctx.lineTo(
     revX + size * 0.5 * Math.cos(Math.PI * 0.75) - 4,
-    y + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
+    revY + size * 0.5 * Math.sin(Math.PI * 0.75) - 4,
   );
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(revX, y, size * 0.5, Math.PI * 0.75, -Math.PI * 0.25);
+  ctx.arc(revX, revY, size * 0.5, Math.PI * 0.75, -Math.PI * 0.25);
   ctx.moveTo(
     revX + size * 0.5 * Math.cos(-Math.PI * 0.25) - 4,
-    y + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
+    revY + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
   );
   ctx.lineTo(
     revX + size * 0.5 * Math.cos(-Math.PI * 0.25),
-    y + size * 0.5 * Math.sin(-Math.PI * 0.25),
+    revY + size * 0.5 * Math.sin(-Math.PI * 0.25),
   );
   ctx.lineTo(
     revX + size * 0.5 * Math.cos(-Math.PI * 0.25) + 4,
-    y + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
+    revY + size * 0.5 * Math.sin(-Math.PI * 0.25) + 4,
   );
   ctx.stroke();
 }
@@ -392,27 +434,15 @@ function drawDesktopShutter(ctx, x, y, shutterSize) {
 
 function handleCanvasClick(event) {
   const rect = canvas.getBoundingClientRect();
-  const isLandscape = document.body.classList.contains("landscape");
   const touch = event.touches ? event.touches[0] : event;
 
-  let physicalClickX = touch.clientX - rect.left;
-  let physicalClickY = touch.clientY - rect.top;
+  const physicalClickX = touch.clientX - rect.left;
+  const physicalClickY = touch.clientY - rect.top;
 
-  let logicalClickX, logicalClickY;
-
-  if (isLandscape) {
-    logicalClickX = physicalClickY;
-    logicalClickY = rect.width - physicalClickX;
-  } else {
-    logicalClickX = physicalClickX;
-    logicalClickY = physicalClickY;
-  }
-
-  const logicalCanvasWidth = isLandscape ? rect.height : rect.width;
-  const logicalCanvasHeight = isLandscape ? rect.width : rect.height;
-
-  const x = logicalClickX * (canvas.width / logicalCanvasWidth);
-  const y = logicalClickY * (canvas.height / logicalCanvasHeight);
+  // With rotations removed, we just scale from the element's CSS size to
+  // the canvas's internal buffer size. This is now robust and correct.
+  const x = physicalClickX * (canvas.width / rect.width);
+  const y = physicalClickY * (canvas.height / rect.height);
 
   for (const key of ["shutter", "resToggle", "reverseCamera"]) {
     const bound = uiBounds[key];
@@ -541,6 +571,7 @@ async function loadPalette(source) {
  * Main initialization function for the application.
  */
 async function init() {
+  // Set initial size
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   initHaptic();
@@ -559,23 +590,22 @@ async function init() {
   canvas.addEventListener("touchstart", handleCanvasClick, { passive: true });
 
   const handleOrientationAndResize = () => {
-    //canvas.width = window.innerWidth
-    //canvas.height = window.innerHeight
-    console.log(window.innerHeight, window.innerWidth);
+    // Resize the canvas drawing buffer to match the new window size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     const isLandscape = window.innerWidth > window.innerHeight;
     document.body.classList.toggle("landscape", isLandscape);
-    setTimeout(() => {
-      const source = isLive
-        ? video
-        : frozenFrameSource || document.createElement("canvas");
-      drawScene(source);
-    }, 100); // A small delay for the layout to settle
+
+    // Redraw the scene immediately with the correct dimensions
+    const source = isLive
+      ? video
+      : frozenFrameSource || document.createElement("canvas");
+    drawScene(source);
   };
 
   window.addEventListener("resize", handleOrientationAndResize);
-
-  // Wait for the window to load to ensure all styles are applied
-  // before the first draw. This is the key to fixing the initial size.
+  // The 'load' event is kept to ensure the first draw happens after layout
   window.addEventListener("load", handleOrientationAndResize);
 
   let pressTimer = null;
@@ -588,6 +618,7 @@ async function init() {
           const upscaleFactor = 8;
           const upscaledCanvas = document.createElement("canvas");
           upscaledCanvas.width = lastProcessedFrame.width * upscaleFactor;
+  
           upscaledCanvas.height = lastProcessedFrame.height * upscaleFactor;
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;
