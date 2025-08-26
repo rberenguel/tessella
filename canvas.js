@@ -6,28 +6,22 @@ const PIXEL_WIDTH = 192;
 const PIXEL_HEIGHT = 256;
 const LOW_RES_WIDTH = PIXEL_WIDTH / 2;
 const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2;
-const FPS = 2;
+const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
-const FADE_DURATION_MS = 250;
-
-// ls palettes/ | awk '{printf "\"palettes/%s\", ", $1}' | sed 's/, $//' | awk '{print "const DEFAULT_PALETTES = [" $0 "];"}'
+const FADE_DURATION_MS = 10;
 
 const DEFAULT_PALETTES = [
   "palettes/berry-nebula-32x.png",
   "palettes/chocomilk-8-32x.png",
-  "palettes/cl8uds-32x.png",
   "palettes/dawnbringers-8-color-32x.png",
   "palettes/eulbink-32x.png",
   "palettes/fading-16-32x.png",
   "palettes/funkyfuture-8-32x.png",
   "palettes/galaxy-flame-32x.png",
-  "palettes/hope-diamond-32x.png",
   "palettes/ink-32x.png",
-  "palettes/ink-crimson-32x-1.png",
   "palettes/ink-crimson-32x.png",
   "palettes/inkpink-32x.png",
   "palettes/japanese-woodblock-32x.png",
-  "palettes/kirokaze-gameboy-32x.png",
   "palettes/lost-century-32x.png",
   "palettes/midnight-ablaze-32x.png",
   "palettes/mushroom-32x.png",
@@ -314,6 +308,7 @@ function drawUI(ctx) {
         shutterRadius * 2,
         true,
         buttonGap,
+        unit,
       );
     } else {
       drawDesktopShutter(
@@ -350,28 +345,72 @@ function drawUI(ctx) {
 }
 
 function drawPalette(ctx, x, y, size, padding, isVertical = false) {
-  const totalLength = currentPalette.length * (size + padding) - padding;
-  const startX = isVertical ? x - size / 2 : x - totalLength / 2;
-  const startY = isVertical ? y - totalLength / 2 : y - size / 2;
+  // This constant can be renamed in your LAYOUT object for clarity.
+  const maxPerBlock = LAYOUT.PALETTE_COLORS_PER_ROW || 8;
+  const numColors = currentPalette.length;
 
-  uiBounds.palette = {
-    x: startX,
-    y: startY,
-    w: isVertical ? size : totalLength,
-    h: isVertical ? totalLength : size,
-    type: "palette",
-  };
+  let blockWidth, blockHeight;
+  if (isVertical) {
+    // Landscape: create a grid with up to 8 rows, adding columns as needed.
+    const numRows = Math.min(numColors, maxPerBlock);
+    const numCols = Math.ceil(numColors / maxPerBlock);
+    blockWidth = numCols * (size + padding) - padding;
+    blockHeight = numRows * (size + padding) - padding;
+  } else {
+    // Portrait: create a grid with up to 8 columns, adding rows as needed.
+    const numCols = Math.min(numColors, maxPerBlock);
+    const numRows = Math.ceil(numColors / maxPerBlock);
+    blockWidth = numCols * (size + padding) - padding;
+    blockHeight = numRows * (size + padding) - padding;
+  }
 
-  currentPalette.forEach((color, i) => {
-    const offset = i * (size + padding);
-    const swatchX = startX + (isVertical ? 0 : offset);
-    const swatchY = startY + (isVertical ? offset : 0);
+  const startX = x - blockWidth / 2;
+  const startY = y - blockHeight / 2;
+
+  // Set the hit area to the entire chrome band it lives in.
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  const unit = Math.min(w, h) / 100;
+  if (isVertical) {
+    const sideChromeWidth = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
+    uiBounds.palette = {
+      x: 0,
+      y: 0,
+      w: sideChromeWidth,
+      h: h,
+      type: "palette",
+    };
+  } else {
+    const topChromeHeight = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
+    uiBounds.palette = {
+      x: 0,
+      y: 0,
+      w: w,
+      h: topChromeHeight,
+      type: "palette",
+    };
+  }
+
+  // Loop through colors and draw them in the calculated grid.
+  for (let i = 0; i < numColors; i++) {
+    let col, row;
+    if (isVertical) {
+      col = Math.floor(i / maxPerBlock);
+      row = i % maxPerBlock;
+    } else {
+      col = i % maxPerBlock;
+      row = Math.floor(i / maxPerBlock);
+    }
+    const swatchX = startX + col * (size + padding);
+    const swatchY = startY + row * (size + padding);
+
+    const color = currentPalette[i];
     ctx.fillStyle = `rgb(${color.join(",")})`;
     ctx.fillRect(swatchX, swatchY, size, size);
     ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     ctx.lineWidth = 2;
     ctx.strokeRect(swatchX, swatchY, size, size);
-  });
+  }
 }
 
 function drawButtons(
@@ -382,6 +421,7 @@ function drawButtons(
   shutterSize,
   isVertical = false,
   gap = 0,
+  unit = 1,
 ) {
   // Shutter button (center)
   uiBounds.shutter = { x: x, y: y, r: shutterSize / 2, type: "shutter" };
@@ -390,7 +430,7 @@ function drawButtons(
   ctx.fillStyle = isLive ? "#e23d28" : "#34c759";
   ctx.fill();
   ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 4 / unit;
   ctx.stroke();
 
   // Resolution Toggle button
@@ -435,7 +475,7 @@ function drawButtons(
   ctx.strokeStyle = "#555";
   ctx.stroke();
   ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 / unit;
   ctx.beginPath();
   ctx.arc(revX, revY, size * 0.25, -Math.PI * 0.25, Math.PI * 0.75);
   ctx.moveTo(
@@ -491,21 +531,16 @@ function drawDesktopShutter(ctx, x, y, shutterSize) {
 function handleCanvasClick(event) {
   const rect = canvas.getBoundingClientRect();
   const touch = event.touches ? event.touches[0] : event;
-
   const physicalClickX = touch.clientX - rect.left;
   const physicalClickY = touch.clientY - rect.top;
 
-  // With rotations removed, we just scale from the element's CSS size to
-  // the canvas's internal buffer size. This is now robust and correct.
   const x = physicalClickX * (canvas.width / rect.width);
   const y = physicalClickY * (canvas.height / rect.height);
 
   for (const key of ["shutter", "resToggle", "reverseCamera"]) {
     const bound = uiBounds[key];
-    if (
-      bound.r &&
-      Math.sqrt((x - bound.x) ** 2 + (y - bound.y) ** 2) < bound.r
-    ) {
+    const radius = bound.r;
+    if (radius && Math.sqrt((x - bound.x) ** 2 + (y - bound.y) ** 2) < radius) {
       handleUIAction(bound.type);
       return;
     }
@@ -519,6 +554,7 @@ function handleCanvasClick(event) {
     y > pBound.y &&
     y < pBound.y + pBound.h
   ) {
+    // A simple click on the palette band triggers the action. No extra data needed.
     handleUIAction(pBound.type);
     return;
   }
@@ -555,9 +591,15 @@ async function handleUIAction(actionType) {
       startCameraWithConstraints(cameraConstraints[mode]);
       break;
     case "palette":
+      // Simple logic: advance to the next palette in the list and reload.
       currentPaletteIndex = (currentPaletteIndex + 1) % DEFAULT_PALETTES.length;
       await loadPalette(DEFAULT_PALETTES[currentPaletteIndex]);
-      if (!isLive && frozenFrameSource) await drawScene(frozenFrameSource);
+
+      // A full redraw is needed as the palette's grid size can change the layout.
+      const source = isLive
+        ? video
+        : frozenFrameSource || document.createElement("canvas");
+      drawScene(source);
       break;
   }
 }
