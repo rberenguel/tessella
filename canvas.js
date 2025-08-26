@@ -136,8 +136,8 @@ async function drawScene(source) {
     const processedCanvas = await processFrame(source);
     const displayCtx = canvas.getContext("2d");
 
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    //canvas.width = canvas.clientWidth;
+    //canvas.height = canvas.clientHeight;
     
     displayCtx.imageSmoothingEnabled = false;
     displayCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -430,6 +430,9 @@ async function init() {
   canvas.addEventListener("touchstart", handleCanvasClick, { passive: true });
   
   const handleOrientationAndResize = () => {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    console.log(window.innerHeight, window.innerWidth)
     const isLandscape = window.innerWidth > window.innerHeight;
     document.body.classList.toggle("landscape", isLandscape);
     setTimeout(() => {
