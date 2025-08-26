@@ -1,0 +1,74 @@
+:root {
+  /* The theme background color, updated dynamically via JavaScript */
+  --chrome-bg: #111;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--chrome-bg);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.app-container,
+.viewfinder {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* This rule rotates the entire app container when the device is in landscape mode,
+   creating a stable, portrait-locked UI experience. */
+body.landscape .app-container {
+  transform-origin: center center;
+  transform: rotate(90deg);
+  width: 100vh; /* Use viewport height for width */
+  height: 100vw; /* Use viewport width for height */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Adjust margins to re-center the rotated container */
+  margin-top: -50vw;
+  margin-left: -50vh;
+}
+
+
+.canvas-container {
+  position: relative;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 3 / 4;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Styles for both the main display and the transition canvas */
+#displayCanvas,
+#transitionCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none; /* Prevents text selection on the canvas */
+}
+
+/* The transition canvas is used for crossfade effects */
+#transitionCanvas {
+  opacity: 0;
+  pointer-events: none; /* Ensures it doesn't block clicks on the main canvas */
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* The video feed is not displayed; it's just a data source for the canvas */
+#videoFeed {
+  display: none;
+}
