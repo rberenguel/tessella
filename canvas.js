@@ -163,7 +163,7 @@ async function drawScene(source) {
   displayCtx.imageSmoothingEnabled = false;
   displayCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const isLandscape = false; //document.body.classList.contains('landscape');
+  const isLandscape = document.body.classList.contains('landscape');
 
   if (isLandscape) {
     displayCtx.save();
@@ -194,10 +194,10 @@ async function drawScene(source) {
 
     displayCtx.drawImage(
       processedCanvas,
-      -drawWidth / 2,
+      0,
       -drawHeight / 2,
-      drawWidth,
-      drawHeight,
+      targetWidthRotated,
+      targetHeightRotated,
     );
     displayCtx.restore();
   } else {
@@ -589,7 +589,7 @@ async function init() {
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;
           upscaledCtx.drawImage(
-            canvas,
+            transitionCanvas,
             0,
             0,
             upscaledCanvas.width,
