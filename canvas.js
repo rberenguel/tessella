@@ -37,6 +37,7 @@ let currentPalette = null;
 let currentPaletteIndex = 0;
 let isLive = true;
 let frozenFrameSource = null;
+let lastProcessedFrame = null;
 let isLowRes = false;
 let isFrontCamera = false;
 let isDesktop = false;
@@ -155,6 +156,7 @@ async function drawScene(source) {
     return;
   }
   const processedCanvas = await processFrame(source);
+  lastProcessedFrame = processedCanvas; // Store the clean frame
   const displayCtx = canvas.getContext("2d");
 
   //canvas.width = canvas.clientWidth;
@@ -163,7 +165,7 @@ async function drawScene(source) {
   displayCtx.imageSmoothingEnabled = false;
   displayCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const isLandscape = document.body.classList.contains('landscape');
+  const isLandscape = document.body.classList.contains("landscape");
 
   if (isLandscape) {
     displayCtx.save();
@@ -580,16 +582,17 @@ async function init() {
   const startPress = (e) => {
     e.preventDefault();
     pressTimer = setTimeout(async () => {
+      if (!lastProcessedFrame) return; // Don't share if there's no image
       try {
         const blob = await new Promise((resolve) => {
-          const upscaleFactor = isLowRes ? 16 : 8;
+          const upscaleFactor = 8;
           const upscaledCanvas = document.createElement("canvas");
-          upscaledCanvas.width = canvas.width * (upscaleFactor / 2);
-          upscaledCanvas.height = canvas.height * (upscaleFactor / 2);
+          upscaledCanvas.width = lastProcessedFrame.width * upscaleFactor;
+          upscaledCanvas.height = lastProcessedFrame.height * upscaleFactor;
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;
           upscaledCtx.drawImage(
-            transitionCanvas,
+            lastProcessedFrame, // Use the clean frame as the source
             0,
             0,
             upscaledCanvas.width,
