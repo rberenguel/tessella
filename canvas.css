@@ -164,14 +164,12 @@ body {
 
 body.landscape #palette {
   position: absolute;
-  top: 0;
   height: calc(0.1 * max(100vh, 100vw));
-  width: 100%;
+  width: 100vw;
   transform-origin: center center;
-  left: -50%;
   transform: rotate(-90deg);
-
-  margin-left: calc(0.05 * max(100vh, 100vw));
+  left: calc(-50% + 0.1 * max(100vh, 100vw));
+  top: 20cqw;
 }
 
 #palettePreview {
@@ -184,7 +182,7 @@ body.landscape #palette {
 }
 
 body.landscape #palettePreview {
-  width: min(50vh, 50vh);
+  width: min(50vh, 20cqw);
 }
 
 body.landscape #palettePreview {

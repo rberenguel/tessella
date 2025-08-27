@@ -765,7 +765,9 @@ async function init() {
     canvas.height = window.innerHeight;
 
     const isLandscape = window.innerWidth > window.innerHeight;
-    document.body.classList.toggle("landscape", isLandscape);
+    if (isLandscape) {
+      document.body.classList.toggle("landscape", isLandscape);
+    }
 
     // Redraw the scene immediately with the correct dimensions
     const source = isLive
