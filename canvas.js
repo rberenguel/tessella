@@ -80,6 +80,9 @@ const video = document.getElementById("videoFeed");
 const canvas = document.getElementById("displayCanvas");
 const imageInput = document.getElementById("imageInput");
 const transitionCanvas = document.getElementById("transitionCanvas");
+const resToggleBtn = document.getElementById("resToggleBtn");
+const reverseCameraBtn = document.getElementById("reverseCameraBtn");
+const shutterBtn = document.getElementById("shutterBtn");
 
 // --- Camera Constraints ---
 const cameraConstraints = {
@@ -297,9 +300,10 @@ function drawUI(ctx) {
   const buttonGap = LAYOUT.BUTTON_GAP * unit;
 
   if (isLandscape) {
+    document.body.classList.add("landscape");
     const sideChromeWidth = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
     drawPalette(ctx, sideChromeWidth / 2, h / 2, swatchSize, padding, true);
-    if (!isDesktop) {
+    /*if (!isDesktop) {
       drawButtons(
         ctx,
         w - sideChromeWidth / 2,
@@ -317,13 +321,14 @@ function drawUI(ctx) {
         h / 2,
         shutterRadius * 2,
       );
-    }
+    }*/
   } else {
     // Portrait
+    document.body.classList.remove("landscape");
     const topChromeHeight = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
     const bottomChromeHeight = LAYOUT.PORTRAIT_BOTTOM_CHROME_H * unit;
     drawPalette(ctx, w / 2, topChromeHeight / 2, swatchSize, padding, false);
-    if (!isDesktop) {
+    /*if (!isDesktop) {
       drawButtons(
         ctx,
         w / 2,
@@ -340,7 +345,7 @@ function drawUI(ctx) {
         h - bottomChromeHeight / 2,
         shutterRadius * 2,
       );
-    }
+    }*/
   }
 }
 
@@ -537,6 +542,7 @@ function handleCanvasClick(event) {
   const x = physicalClickX * (canvas.width / rect.width);
   const y = physicalClickY * (canvas.height / rect.height);
 
+  /*
   for (const key of ["shutter", "resToggle", "reverseCamera"]) {
     const bound = uiBounds[key];
     const radius = bound.r;
@@ -544,7 +550,7 @@ function handleCanvasClick(event) {
       handleUIAction(bound.type);
       return;
     }
-  }
+  }*/
 
   const pBound = uiBounds.palette;
   if (
@@ -560,10 +566,25 @@ function handleCanvasClick(event) {
   }
 }
 
+async function handleShutterClickMobile() {
+  isLive = !isLive;
+  if (isLive) {
+    runLiveView();
+  } else {
+    setTimeout(() => triggerHaptic(), 50);
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = video.videoWidth;
+    tempCanvas.height = video.videoHeight;
+    tempCanvas.getContext("2d").drawImage(video, 0, 0);
+    frozenFrameSource = tempCanvas;
+    await drawScene(frozenFrameSource);
+  }
+}
+
 async function handleUIAction(actionType) {
   triggerHaptic();
   switch (actionType) {
-    case "shutter":
+    /*case "shutter":
       if (isDesktop) {
         imageInput.click();
       } else {
@@ -589,7 +610,7 @@ async function handleUIAction(actionType) {
       isFrontCamera = !isFrontCamera;
       const mode = isFrontCamera ? "user" : "environment";
       startCameraWithConstraints(cameraConstraints[mode]);
-      break;
+      break;*/
     case "palette":
       // Simple logic: advance to the next palette in the list and reload.
       currentPaletteIndex = (currentPaletteIndex + 1) % DEFAULT_PALETTES.length;
@@ -680,9 +701,25 @@ async function init() {
 
   if (isDesktop) {
     imageInput.addEventListener("change", handleImageFile);
+    shutterBtn.addEventListener("click", () => imageInput.click());
   } else {
     startCameraWithConstraints(cameraConstraints.environment);
+    shutterBtn.addEventListener("click", handleShutterClickMobile);
   }
+
+  resToggleBtn.addEventListener("click", async () => {
+    triggerHaptic();
+    isLowRes = !isLowRes;
+    resToggleBtn.classList.toggle("active", isLowRes);
+    if (!isLive && frozenFrameSource) await drawScene(frozenFrameSource);
+  });
+
+  reverseCameraBtn.addEventListener("click", () => {
+    triggerHaptic();
+    isFrontCamera = !isFrontCamera;
+    const mode = isFrontCamera ? "user" : "environment";
+    startCameraWithConstraints(cameraConstraints[mode]);
+  });
 
   canvas.addEventListener("click", handleCanvasClick);
   canvas.addEventListener("touchstart", handleCanvasClick, { passive: true });

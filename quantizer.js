@@ -129,8 +129,8 @@ export function quantize(imageData, targetPalette) {
     return;
   }
 
-  // --- Final Render Pass (with optional dithering) ---
-  if (useDithering) {
+  // TODO clean up this. This dithering does nothing
+  if (false) {
     const floatPixels = new Float32Array(originalPixels.flat());
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -167,6 +167,78 @@ export function quantize(imageData, targetPalette) {
       data[i4] = finalColors[i][0];
       data[i4 + 1] = finalColors[i][1];
       data[i4 + 2] = finalColors[i][2];
+    }
+  }
+}
+
+export function quantizeWithDithering(imageData, targetPalette) {
+  if (!targetPalette || targetPalette.length === 0) return;
+
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
+
+  // Create a floating-point copy for error diffusion
+  const floatPixels = new Float32Array((data.length / 4) * 3);
+  for (let i = 0; i < data.length; i += 4) {
+    const i3 = (i / 4) * 3;
+    floatPixels[i3] = data[i];
+    floatPixels[i3 + 1] = data[i + 1];
+    floatPixels[i3 + 2] = data[i + 2];
+  }
+
+  const findClosest = (r, g, b, palette) => {
+    let closest = palette[0];
+    let minDistanceSq = Infinity;
+    for (const pColor of palette) {
+      const dR = r - pColor[0];
+      const dG = g - pColor[1];
+      const dB = b - pColor[2];
+      const distanceSq = dR * dR + dG * dG + dB * dB;
+      if (distanceSq < minDistanceSq) {
+        minDistanceSq = distanceSq;
+        closest = pColor;
+      }
+    }
+    return closest;
+  };
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i3 = (y * width + x) * 3;
+      const i4 = (y * width + x) * 4;
+
+      // 1. Get current pixel color (includes accumulated error)
+      const oldR = floatPixels[i3];
+      const oldG = floatPixels[i3 + 1];
+      const oldB = floatPixels[i3 + 2];
+
+      // 2. Find the closest color in the target palette
+      const newColor = findClosest(oldR, oldG, oldB, targetPalette);
+
+      data[i4] = newColor[0];
+      data[i4 + 1] = newColor[1];
+      data[i4 + 2] = newColor[2];
+
+      // 3. Calculate error
+      const errR = oldR - newColor[0];
+      const errG = oldG - newColor[1];
+      const errB = oldB - newColor[2];
+
+      // 4. Diffuse error
+      const diffuse = (dx, dy, factor) => {
+        if (x + dx >= 0 && x + dx < width && y + dy < height) {
+          const ni3 = ((y + dy) * width + (x + dx)) * 3;
+          floatPixels[ni3] += errR * factor;
+          floatPixels[ni3 + 1] += errG * factor;
+          floatPixels[ni3 + 2] += errB * factor;
+        }
+      };
+
+      diffuse(1, 0, 7 / 16);
+      diffuse(-1, 1, 3 / 16);
+      diffuse(0, 1, 5 / 16);
+      diffuse(1, 1, 1 / 16);
     }
   }
 }
