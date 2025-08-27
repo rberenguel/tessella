@@ -237,6 +237,7 @@ async function drawScene(source) {
 
   let viewfinder;
   if (isLandscape) {
+    document.body.classList.add("landscape");
     viewfinder = {
       x: sideChrome,
       y: 0,
@@ -244,6 +245,7 @@ async function drawScene(source) {
       height: h,
     };
   } else {
+    document.body.classList.remove("landscape");
     viewfinder = {
       x: 0,
       y: topChrome,
@@ -788,7 +790,9 @@ async function init() {
 
     const isLandscape = window.innerWidth > window.innerHeight;
     if (isLandscape) {
-      document.body.classList.toggle("landscape", isLandscape);
+      document.body.classList.add("landscape");
+    } else {
+      document.body.classList.remove("landscape");
     }
 
     // Redraw the scene immediately with the correct dimensions
