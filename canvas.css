@@ -154,22 +154,28 @@ body {
 
 /* Palette */
 
+#topContainer {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%);
+  top: 1vh;
+  width: auto;
+  display: flex;
+}
+
 #palette {
   position: absolute;
-  top: 0;
   height: calc(0.1 * max(100vh, 100vw));
-  width: 100%;
+  width: 100vw;
   z-index: 1000;
 }
 
 body.landscape #palette {
-  position: absolute;
-  height: calc(0.1 * max(100vh, 100vw));
-  width: 100vw;
+  top: 0 !important;
   transform-origin: center center;
   transform: rotate(-90deg);
-  left: calc(-50% + 0.1 * max(100vh, 100vw));
   top: 20cqw;
+  left: calc(-50% + 0.1 * max(100vh, 100vw));
 }
 
 #palettePreview {
@@ -182,11 +188,8 @@ body.landscape #palette {
 }
 
 body.landscape #palettePreview {
-  width: min(50vh, 20cqw);
-}
-
-body.landscape #palettePreview {
-  transform: translate(-100%);
+  width: 50vh;
+  left: 30%;
 }
 
 .swatch {
@@ -200,7 +203,7 @@ body.landscape #palettePreview {
 
 #controls {
   position: absolute;
-  bottom: 0;
+  bottom: calc(0.1 * min(100vh, 100vw));
   height: calc(0.1 * max(100vh, 100vw));
   width: 100%;
 }
@@ -209,10 +212,10 @@ body.landscape #controls {
   position: absolute;
   bottom: 0;
   height: calc(0.1 * max(100vh, 100vw));
-  width: 100%;
+  width: 100vh;
   transform: rotate(-90deg);
-  transform-origin: center center;
-  left: 50%;
+  transform-origin: left top;
+  left: 100%;
 }
 
 #buttonContainer {
@@ -228,8 +231,8 @@ body.landscape #controls {
 }
 
 body.landscape #buttonContainer {
-  left: calc(50% + 25vh);
-  transform: translate(-50%, calc(-0.05 * max(100vh, 100vw)));
+  transform: translate(-25%, calc(-0.1 * max(100vh, 100vw)));
+  left: 0;
 }
 
 #shutterBtn {
@@ -326,16 +329,14 @@ body.landscape #buttonContainer {
 /* Settings Button */
 #settingsBtn {
   position: relative;
-  top: 8px;
   left: 10%;
-  transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--chrome-fg);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
-  display: inline-block;
+  display: flex;
   align-items: center;
 }
 

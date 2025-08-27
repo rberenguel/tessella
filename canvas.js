@@ -86,6 +86,8 @@ const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
 const modalContent = document.getElementById("modal-content");
 
+const isLandscape = () => window.innerWidth > window.innerHeight;
+
 async function fetchSelfManifest() {
   try {
     const response = await fetch("./manifest.json"); // Assumes style.css is in the same directory as index.html
@@ -227,7 +229,6 @@ async function drawScene(source) {
 
   const w = canvas.width;
   const h = canvas.height;
-  const isLandscape = w > h;
   const unit = Math.min(w, h) / 100;
 
   // Define layout areas using the global LAYOUT constants
@@ -236,7 +237,7 @@ async function drawScene(source) {
   const sideChrome = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
 
   let viewfinder;
-  if (isLandscape) {
+  if (isLandscape()) {
     document.body.classList.add("landscape");
     viewfinder = {
       x: sideChrome,
@@ -312,7 +313,6 @@ async function runLiveView() {
 function drawUI(ctx) {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
-  const isLandscape = w > h;
   const unit = Math.min(w, h) / 100;
 
   // Read all UI sizes and spacing from the global LAYOUT object
@@ -322,7 +322,7 @@ function drawUI(ctx) {
   const padding = LAYOUT.PADDING * unit;
   const buttonGap = LAYOUT.BUTTON_GAP * unit;
 
-  if (isLandscape) {
+  if (isLandscape()) {
     document.body.classList.add("landscape");
     const sideChromeWidth = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
     displayPalette(currentPalette);
@@ -788,8 +788,7 @@ async function init() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const isLandscape = window.innerWidth > window.innerHeight;
-    if (isLandscape) {
+    if (isLandscape()) {
       document.body.classList.add("landscape");
     } else {
       document.body.classList.remove("landscape");
