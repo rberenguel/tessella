@@ -83,7 +83,7 @@ const transitionCanvas = document.getElementById("transitionCanvas");
 const resToggleBtn = document.getElementById("resToggleBtn");
 const reverseCameraBtn = document.getElementById("reverseCameraBtn");
 const shutterBtn = document.getElementById("shutterBtn");
-
+const palettePreview = document.getElementById("palettePreview");
 // --- Camera Constraints ---
 const cameraConstraints = {
   user: { video: { facingMode: "user" } },
@@ -302,7 +302,8 @@ function drawUI(ctx) {
   if (isLandscape) {
     document.body.classList.add("landscape");
     const sideChromeWidth = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
-    drawPalette(ctx, sideChromeWidth / 2, h / 2, swatchSize, padding, true);
+    displayPalette(currentPalette);
+    //drawPalette(ctx, sideChromeWidth / 2, h / 2, swatchSize, padding, true);
     /*if (!isDesktop) {
       drawButtons(
         ctx,
@@ -327,7 +328,7 @@ function drawUI(ctx) {
     document.body.classList.remove("landscape");
     const topChromeHeight = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
     const bottomChromeHeight = LAYOUT.PORTRAIT_BOTTOM_CHROME_H * unit;
-    drawPalette(ctx, w / 2, topChromeHeight / 2, swatchSize, padding, false);
+    //drawPalette(ctx, w / 2, topChromeHeight / 2, swatchSize, padding, false);
     /*if (!isDesktop) {
       drawButtons(
         ctx,
@@ -347,6 +348,16 @@ function drawUI(ctx) {
       );
     }*/
   }
+}
+
+function displayPalette(palette) {
+  palettePreview.innerHTML = "";
+  palette.forEach((color) => {
+    const swatch = document.createElement("div");
+    swatch.className = "swatch";
+    swatch.style.backgroundColor = `rgb(${color.join(",")})`;
+    palettePreview.appendChild(swatch);
+  });
 }
 
 function drawPalette(ctx, x, y, size, padding, isVertical = false) {
@@ -570,6 +581,7 @@ async function handleShutterClickMobile() {
   isLive = !isLive;
   if (isLive) {
     runLiveView();
+    shutterBtn.classList.remove("active");
   } else {
     setTimeout(() => triggerHaptic(), 50);
     const tempCanvas = document.createElement("canvas");
@@ -577,6 +589,7 @@ async function handleShutterClickMobile() {
     tempCanvas.height = video.videoHeight;
     tempCanvas.getContext("2d").drawImage(video, 0, 0);
     frozenFrameSource = tempCanvas;
+    shutterBtn.classList.add("active");
     await drawScene(frozenFrameSource);
   }
 }
@@ -615,7 +628,7 @@ async function handleUIAction(actionType) {
       // Simple logic: advance to the next palette in the list and reload.
       currentPaletteIndex = (currentPaletteIndex + 1) % DEFAULT_PALETTES.length;
       await loadPalette(DEFAULT_PALETTES[currentPaletteIndex]);
-
+      displayPalette(currentPalette);
       // A full redraw is needed as the palette's grid size can change the layout.
       const source = isLive
         ? video
@@ -683,6 +696,7 @@ async function loadPalette(source) {
   } else {
     localStorage.setItem("savedPalette", "");
   }
+  displayPalette(currentPalette);
   updateTheme(currentPalette);
 }
 
@@ -717,8 +731,29 @@ async function init() {
   reverseCameraBtn.addEventListener("click", () => {
     triggerHaptic();
     isFrontCamera = !isFrontCamera;
+    isLive = true;
+    shutterBtn.classList.remove("active");
+    if (isFrontCamera) {
+      reverseCameraBtn.querySelector("span").classList.add("iconoir-lens");
+      reverseCameraBtn
+        .querySelector("span")
+        .classList.remove("iconoir-face-id");
+    } else {
+      reverseCameraBtn.querySelector("span").classList.remove("iconoir-lens");
+      reverseCameraBtn.querySelector("span").classList.add("iconoir-face-id");
+    }
     const mode = isFrontCamera ? "user" : "environment";
     startCameraWithConstraints(cameraConstraints[mode]);
+  });
+
+  palettePreview.addEventListener("click", async () => {
+    console.log("foo");
+    currentPaletteIndex = (currentPaletteIndex + 1) % DEFAULT_PALETTES.length;
+    await loadPalette(DEFAULT_PALETTES[currentPaletteIndex]);
+    const source = isLive
+      ? video
+      : frozenFrameSource || document.createElement("canvas");
+    drawScene(source);
   });
 
   canvas.addEventListener("click", handleCanvasClick);

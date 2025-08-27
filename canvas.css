@@ -10,7 +10,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden !important;
-  position: static;
+  position: fixed;
   background-color: var(--chrome-bg);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -25,52 +25,6 @@ body {
   top: 0;
   left: 0;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-.chrome-area {
-  background-color: var(--chrome-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.3s ease;
-}
-
-header.chrome-area {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: 0;
-}
-
-#palettePreview {
-  display: flex;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.swatch {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.viewfinder {
-  /*position: relative;
-  background-color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;*/
-}
-
-.canvas-container {
-  /*position: relative;
-  width: auto;
-  height: 100%;
-  aspect-ratio: 3 / 4;
-  max-width: 100%;
-  max-height: 100%;
-  */
 }
 
 /* This rule now applies to BOTH canvases */
@@ -198,6 +152,52 @@ header.chrome-area {
     inset 0 -2px 0 rgba(0, 0, 0, 0.2);
 }
 
+/* Palette */
+
+#palette {
+  position: absolute;
+  top: 0;
+  height: calc(0.1 * max(100vh, 100vw));
+  width: 100%;
+  z-index: 1000;
+}
+
+body.landscape #palette {
+  position: absolute;
+  top: 0;
+  height: calc(0.1 * max(100vh, 100vw));
+  width: 100%;
+  transform-origin: center center;
+  left: -50%;
+  transform: rotate(-90deg);
+
+  margin-left: calc(0.05 * max(100vh, 100vw));
+}
+
+#palettePreview {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: min(30vh, 30vh);
+  position: relative;
+  left: 50%;
+  transform: translate(-50%);
+}
+
+body.landscape #palettePreview {
+  width: min(50vh, 50vh);
+}
+
+body.landscape #palettePreview {
+  transform: translate(-100%);
+}
+
+.swatch {
+  width: calc(5 * min(1vh, 1vw));
+  height: calc(5 * min(1vh, 1vw));
+  border-radius: calc(1 * min(1vh, 1vw));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* HTML controls: footer */
 
 #controls {
@@ -231,6 +231,7 @@ body.landscape #controls {
 
 body.landscape #buttonContainer {
   left: calc(50% + 25vh);
+  transform: translate(-50%, calc(-0.05 * max(100vh, 100vw)));
 }
 
 #shutterBtn {
@@ -254,6 +255,14 @@ body.landscape #buttonContainer {
   box-shadow:
     0 2px 5px rgba(0, 0, 0, 0.4),
     inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+#shutterBtn.active {
+  background-color: #792116;
+  border: 4px solid #395d0e;
+  box-shadow:
+    0 5px 10px rgba(0, 0, 0, 0.3),
+    inset 0 -8px 0 rgba(0, 0, 0, 0.2);
 }
 
 #resToggleBtn {

@@ -1,0 +1,126 @@
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Italic.woff2") format("woff2");
+  font-weight: normal;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Oblique.woff2") format("woff2");
+  font-weight: normal;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-BoldItalic.woff2") format("woff2");
+  font-weight: bold;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-BoldOblique.woff2") format("woff2");
+  font-weight: bold;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-LightOblique.woff2") format("woff2");
+  font-weight: 300;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-ExtraLight.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-ExtraLightItalic.woff2") format("woff2");
+  font-weight: 200;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-ExtraLightOblique.woff2") format("woff2");
+  font-weight: 200;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-MediumItalic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-MediumOblique.woff2") format("woff2");
+  font-weight: 500;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-SemiBoldItalic.woff2") format("woff2");
+  font-weight: 600;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-SemiBoldOblique.woff2") format("woff2");
+  font-weight: 600;
+  font-style: oblique;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-Thin.woff2") format("woff2");
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-ThinItalic.woff2") format("woff2");
+  font-weight: 100;
+  font-style: italic;
+}
+@font-face {
+  font-family: "victormono";
+  src: url("./victormono/VictorMono-ThinOblique.woff2") format("woff2");
+  font-weight: 100;
+  font-style: oblique;
+}

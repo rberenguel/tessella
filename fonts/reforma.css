@@ -1,0 +1,16 @@
+@font-face {
+  font-family: "reforma";
+  src: url("Reforma1969-Blanca.woff2") format("woff2");
+}
+@font-face {
+  font-family: "reforma-bold";
+  src: url("Reforma1969-Negra.woff") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: "reforma-italic";
+  src: url("Reforma1969-BlancaItalica.woff2") format("woff2");
+  font-weight: normal;
+  font-style: italic;
+}
