@@ -20,7 +20,14 @@
   </head>
   <body>
     <!-- The main container for the app's visual output -->
-    <header id="palette"><div id="palettePreview"></div></header>
+    <header id="palette">
+      <div id="topContainer">
+        <button id="settingsBtn" aria-label="Settings">
+          <span class="iconoir-settings"></span>
+        </button>
+        <div id="palettePreview"></div>
+      </div>
+    </header>
     <div class="app-container">
       <main class="viewfinder">
         <div class="canvas-container">
@@ -58,5 +65,21 @@
     </footer>
     <!-- The main application logic -->
     <script src="canvas.js" type="module"></script>
+    <div id="infoModal" class="modal">
+      <div id="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>
+          Tesseŀla: A pixelising camera <span id="version">{{version}}</span>
+        </h2>
+        <p>Long press on the image once taken to save / share it.</p>
+        <p>Tap on the palette to switch palettes.</p>
+        <p>
+          Palettes are from Lospec, you can find the full list in
+          <a href="https://github.com/rberenguel/tessella"
+            >this app's repository</a
+          >
+        </p>
+      </div>
+    </div>
   </body>
 </html>

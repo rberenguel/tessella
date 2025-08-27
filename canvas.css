@@ -173,7 +173,7 @@ body.landscape #palette {
 }
 
 #palettePreview {
-  display: grid;
+  display: inline-grid;
   grid-template-columns: repeat(8, 1fr);
   width: min(30vh, 30vh);
   position: relative;
@@ -321,4 +321,68 @@ body.landscape #buttonContainer {
   justify-content: center;
   align-items: center;
   content: "⇄";
+}
+
+/* Settings Button */
+#settingsBtn {
+  position: relative;
+  top: 8px;
+  left: 10%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--chrome-fg);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-block;
+  align-items: center;
+}
+
+#settingsBtn .iconoir-settings {
+  font-size: 24px; /* Ensure icon size matches button */
+}
+
+/* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1001; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.7); /* Black w/ opacity */
+  backdrop-filter: blur(5px); /* Optional: for a frosted glass effect */
+}
+
+#modal-content {
+  background-color: #002b36; /* Solarized dark base */
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 500px; /* Max width for larger screens */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: var(--chrome-fg);
+  position: relative;
+}
+
+.close-button {
+  color: var(--chrome-fg);
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #bbb;
+  text-decoration: none;
+  cursor: pointer;
 }

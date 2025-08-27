@@ -84,6 +84,27 @@ const resToggleBtn = document.getElementById("resToggleBtn");
 const reverseCameraBtn = document.getElementById("reverseCameraBtn");
 const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
+const modalContent = document.getElementById("modal-content");
+
+async function fetchSelfManifest() {
+  try {
+    const response = await fetch("./manifest.json"); // Assumes style.css is in the same directory as index.html
+    if (response.ok) {
+      let loadedManifest = await response.text();
+      let version = JSON.parse(loadedManifest).version;
+      //props.version = version;
+      modalContent.querySelector("#version").innerHTML = modalContent
+        .querySelector("#version")
+        .innerHTML.replace("{{version}}", version);
+      console.log("Version fetched.");
+    } else {
+      console.warn("Failed to fetch manifest", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error fetching manifest: ", error);
+  }
+}
+
 // --- Camera Constraints ---
 const cameraConstraints = {
   user: { video: { facingMode: "user" } },
@@ -704,6 +725,7 @@ async function loadPalette(source) {
  * Main initialization function for the application.
  */
 async function init() {
+  await fetchSelfManifest();
   // Set initial size
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -833,6 +855,26 @@ async function init() {
   canvas.addEventListener("touchend", cancelPress);
   canvas.addEventListener("touchcancel", cancelPress);
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // Modal functionality
+  const settingsBtn = document.getElementById("settingsBtn");
+  const infoModal = document.getElementById("infoModal");
+  const closeButton = document.querySelector(".close-button");
+
+  settingsBtn.addEventListener("click", () => {
+    infoModal.style.display = "block";
+    isLive = false;
+  });
+
+  closeButton.addEventListener("click", () => {
+    infoModal.style.display = "none";
+  });
+
+  window.addEventListener("click", (event) => {
+    if (event.target == infoModal) {
+      infoModal.style.display = "none";
+    }
+  });
 }
 
 init();
