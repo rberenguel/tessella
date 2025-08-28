@@ -10,6 +10,27 @@ const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
 
+/*
+
+echo '
+"palettes/berry-nebula-32x.png",
+...,
+"palettes/wish-gb-32x.png",
+' | grep -o '".*"' | tr -d '"' | awk -F'[/.]' '{
+    slug = $2;
+    sub(/-32x$/, "", slug);
+    name = slug;
+    gsub(/-/, " ", name);
+    n = split(name, a, " ");
+    name_cap = "";
+    for (i=1; i<=n; i++) {
+        name_cap = name_cap toupper(substr(a[i],1,1)) substr(a[i],2) (i==n ? "" : " ");
+    }
+    printf "* [%s](https://lospec.com/palette-list/%s)\n", name_cap, slug;
+}'
+
+*/
+
 const DEFAULT_PALETTES = [
   "palettes/berry-nebula-32x.png",
   "palettes/chocomilk-8-32x.png",
@@ -87,6 +108,7 @@ const reverseCameraBtn = document.getElementById("reverseCameraBtn");
 const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
 const modalContent = document.getElementById("modal-content");
+const loadBtn = document.getElementById("loadBtn");
 
 const isLandscape = () => window.innerWidth > window.innerHeight;
 
@@ -672,6 +694,7 @@ function handleImageFile(event) {
   const file = event.target.files[0];
   if (!file) return;
   isLive = false;
+  shutterBtn.classList.add("active"); // Visually indicate we are in a 'frozen' state
   const img = new Image();
   img.onload = async () => {
     frozenFrameSource = img;
@@ -744,8 +767,10 @@ async function init() {
   const savedPalette = localStorage.getItem("savedPalette");
   await loadPalette(savedPalette || DEFAULT_PALETTES[0]);
 
+  imageInput.addEventListener("change", handleImageFile);
+  loadBtn.addEventListener("click", () => imageInput.click());
+
   if (isDesktop) {
-    imageInput.addEventListener("change", handleImageFile);
     shutterBtn.addEventListener("click", () => imageInput.click());
   } else {
     startCameraWithConstraints(cameraConstraints.environment);

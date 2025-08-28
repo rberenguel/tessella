@@ -284,7 +284,7 @@ body.landscape #controls {
 }
 
 body.landscape #buttonContainer {
-  transform: translate(-25%, calc(-0.1 * max(100vh, 100vw)));
+  transform: translate(-25%, calc(-0.13 * max(100vh, 100vw)));
   left: 0;
 }
 
