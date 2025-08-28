@@ -411,7 +411,7 @@ body.landscape #buttonContainer {
   top: 0;
   width: 100%; /* Full width */
   height: 100%; /* Full height */
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   overflow: auto; /* Enable scroll if needed */
   background-color: rgba(0, 0, 0, 0.7); /* Black w/ opacity */
   backdrop-filter: blur(5px); /* Optional: for a frosted glass effect */
@@ -433,6 +433,27 @@ body.landscape #buttonContainer {
 #modal-content a {
   color: #990;
   text-decoration: none;
+}
+
+#modal-content code {
+  color: #900;
+}
+
+#modal-content h1,
+#modal-content h2,
+#modal-content h3,
+#modal-content h4 {
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  margin-block-start: 0;
+  margin-block-end: 0.3rem;
+}
+
+#modal-content p {
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  margin-block-start: 0;
+  margin-block-end: 0.3rem;
 }
 
 .close-button {

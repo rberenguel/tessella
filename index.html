@@ -16,7 +16,7 @@
     />
     <meta name="theme-color" content="#111111" />
     <link rel="stylesheet" href="fonts/jersey.css" />
-    <link rel="stylesheet" href="fonts/monoid.css" />
+    <link rel="stylesheet" href="fonts/inter.css" />
     <link rel="stylesheet" href="fonts/iconoir/iconoir.css" />
     <link rel="stylesheet" href="canvas.css" />
   </head>
@@ -85,18 +85,23 @@
       <div id="modal-content">
         <span class="close-button">&times;</span>
         <h2>
-          <span style="font-family: &quot;monoidregular&quot;">Tesseŀla</span>:
-          A pixelising camera <span id="version">{{version}}</span>
+          <span style="font-family: &quot;Inter&quot;">Tesseŀla</span>
         </h2>
+        <h3>Pixel cam <span id="version">{{version}}</span></h3>
+        <h4>By Ruben Berenguel, 2025</h4>
         <hr />
-        <p>Palettes: tap to switch.</p>
-        <p>Square button: low/lower res.</p>
-        <p>Eye button: Floyd-Sternberg dithering on/off.</p>
-        <p>Upload button: Use an existing image.</p>
-        <p>Face button: Use front camera.</p>
+        <p><code>Palettes</code>: tap to switch, long tap for modal</p>
+        <p><code>Square button:</code> low/lower res.</p>
+        <p><code>Eye button</code>: Floyd-Sternberg dithering on/off.</p>
         <p>
-          Long press on the image once taken to save / share it. Sometimes it
-          can fail, tap twice on the lower resolution and that seems to fix it.
+          <code>Upload button</code>: Use an existing image, or upload a
+          (single) custom palette (Mx32 image composed of 32x32 squares)
+        </p>
+        <p><code>Face button</code>: Switch to front camera (and then back).</p>
+        <p>
+          <code>Long press on the image</code> once taken to save / share it.
+          Sometimes it can fail. If it does, tap twice on the lower resolution
+          and that seems to fix it.
         </p>
 
         <p>
@@ -107,7 +112,10 @@
         </p>
         <hr />
         <p>
-          Handling this kind of layout is a horrible experience. Damn Safari.
+          The layout can be somewhat unstable. This is because iOS Safari does
+          not respect preferred orientation lock, so I had to create a
+          responsive layout that looks the same when the phone rotates. This
+          would not happen on Android, but I have to use the same way in both.
         </p>
       </div>
     </div>
