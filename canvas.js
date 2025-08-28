@@ -706,6 +706,13 @@ async function init() {
       infoModal.style.display = "none";
     }
   });
+  setInterval(() => {
+    if (isLandscape()) {
+      document.body.classList.add("landscape");
+    } else {
+      document.body.classList.remove("landscape");
+    }
+  }, 500);
 }
 
 init();
