@@ -12,30 +12,34 @@ const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
 const DEBUG = false; // Disables standalone being required
 
-const BUILT_IN_PALETTES = [
+export const BUILT_IN_PALETTES = [
+  "palettes/bastille-8-32x.png",
   "palettes/berry-nebula-32x.png",
-  "palettes/chocomilk-8-32x.png",
+  "palettes/calm-sunset-32x.png",
+  "palettes/cyclope6-32x.png",
   "palettes/dawnbringers-8-color-32x.png",
   "palettes/eulbink-32x.png",
-  "palettes/fading-16-32x.png",
   "palettes/funkyfuture-8-32x.png",
   "palettes/galaxy-flame-32x.png",
+  "palettes/golden-flame-32x.png",
   "palettes/ink-32x.png",
   "palettes/ink-crimson-32x.png",
-  "palettes/inkpink-32x.png",
   "palettes/japanese-woodblock-32x.png",
   "palettes/lost-century-32x.png",
   "palettes/midnight-ablaze-32x.png",
   "palettes/mushroom-32x.png",
   "palettes/na16-32x.png",
   "palettes/nintendo-gameboy-bgb-32x.png",
+  "palettes/odd-feeling-32x.png",
   "palettes/oil-6-32x.png",
   "palettes/pollen8-32x.png",
   "palettes/rust-gold-8-32x.png",
   "palettes/seafoam-32x.png",
   "palettes/sirens-at-night-32x.png",
   "palettes/slso8-32x.png",
+  "palettes/smooth-polished-silver-32x.png",
   "palettes/steam-lords-32x.png",
+  "palettes/sunset-red-32x.png",
   "palettes/twilight-5-32x.png",
   "palettes/wish-gb-32x.png",
 ];
