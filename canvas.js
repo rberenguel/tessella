@@ -1,4 +1,4 @@
-import { quantize } from "./quantizer.js";
+import { quantize, quantizeWithDithering } from "./quantizer.js";
 import { initHaptic, triggerHaptic } from "./haptic.js";
 
 // --- Configuration ---
@@ -64,6 +64,7 @@ let isLive = true;
 let frozenFrameSource = null;
 let lastProcessedFrame = null;
 let isLowRes = false;
+let isDithering = false;
 let isFrontCamera = false;
 let isDesktop = false;
 
@@ -81,6 +82,7 @@ const canvas = document.getElementById("displayCanvas");
 const imageInput = document.getElementById("imageInput");
 const transitionCanvas = document.getElementById("transitionCanvas");
 const resToggleBtn = document.getElementById("resToggleBtn");
+const ditherToggleBtn = document.getElementById("ditherBtn");
 const reverseCameraBtn = document.getElementById("reverseCameraBtn");
 const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
@@ -202,7 +204,12 @@ async function processFrame(source) {
   );
 
   const imageData = processedCtx.getImageData(0, 0, targetWidth, targetHeight);
-  quantize(imageData, currentPalette);
+  if (isDithering) {
+    quantizeWithDithering(imageData, currentPalette);
+  } else {
+    quantize(imageData, currentPalette);
+  }
+
   processedCtx.putImageData(imageData, 0, 0);
 
   return processedCanvas;
@@ -749,6 +756,12 @@ async function init() {
     triggerHaptic();
     isLowRes = !isLowRes;
     resToggleBtn.classList.toggle("active", isLowRes);
+    if (!isLive && frozenFrameSource) await drawScene(frozenFrameSource);
+  });
+  ditherToggleBtn.addEventListener("click", async () => {
+    triggerHaptic();
+    isDithering = !isDithering;
+    ditherToggleBtn.classList.toggle("active", isDithering);
     if (!isLive && frozenFrameSource) await drawScene(frozenFrameSource);
   });
 
