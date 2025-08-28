@@ -10,6 +10,7 @@ const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2;
 const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
+const DEBUG = false; // Disables standalone being required
 
 const BUILT_IN_PALETTES = [
   "palettes/berry-nebula-32x.png",
@@ -84,6 +85,8 @@ const shutterBtn = document.getElementById("shutterBtn");
 const palettePreview = document.getElementById("palettePreview");
 const modalContent = document.getElementById("modal-content");
 const loadBtn = document.getElementById("loadBtn");
+const infoModal = document.getElementById("infoModal");
+const closeButton = document.querySelectorAll(".close-button");
 
 const isLandscape = () => window.innerWidth > window.innerHeight;
 
@@ -403,6 +406,18 @@ function updateTheme(palette) {
     .querySelector('meta[name="theme-color"]')
     .setAttribute("content", themeColor);
 }
+
+const isMobile = () => "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+const needsStandalone = () => {
+  const standaloneiOS = window.navigator.standalone === true;
+  const standaloneAndroid = window.matchMedia(
+    "(display-mode: standalone)",
+  ).matches;
+
+  return isMobile() && !standaloneiOS && !standaloneAndroid && !DEBUG;
+};
+
 async function getColorsFromSource(source) {
   const img = new Image();
   img.src = source;
@@ -457,24 +472,16 @@ async function init() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   initHaptic();
-  isDesktop = !("ontouchstart" in window || navigator.maxTouchPoints > 0);
-  /*
-  const customPalette = await get("customPalette");
-  if (customPalette && !allPalettes.includes(customPalette)) {
-    allPalettes.push(customPalette);
+  isDesktop = !isMobile();
+
+  if (needsStandalone()) {
+    console.log("Needs standalone");
+    infoModal.style.display = "block";
+    (infoModal.querySelector("#modal-content").innerHTML =
+      "Please install as a standalone web app (Usually share -> Add to Home Screen)<br/>Otherwise the sizing and the buttons don't work as well.<br/>You can always remove it later 😀"),
+      (isLive = false);
+    return;
   }
-
-  const savedPaletteSrc = localStorage.getItem("savedPalette");
-  let initialPaletteSrc = savedPaletteSrc;
-
-  if (!initialPaletteSrc || !allPalettes.includes(initialPaletteSrc)) {
-    initialPaletteSrc = allPalettes[0];
-  }
-
-  currentPaletteIndex = allPalettes.indexOf(initialPaletteSrc);
-  if (currentPaletteIndex === -1) currentPaletteIndex = 0;
-  await loadPalette(allPalettes[currentPaletteIndex]);
-*/
 
   const savedPaletteSrc =
     localStorage.getItem("savedPalette") || BUILT_IN_PALETTES[0];
@@ -671,17 +678,17 @@ async function init() {
     paletteModal.style.display = "none";
   });
   const settingsBtn = document.getElementById("settingsBtn");
-  const infoModal = document.getElementById("infoModal");
-  const closeButton = document.querySelector(".close-button");
 
   settingsBtn.addEventListener("click", () => {
     infoModal.style.display = "block";
     isLive = false;
   });
 
-  closeButton.addEventListener("click", () => {
-    infoModal.style.display = "none";
-  });
+  Array.from(closeButton).map((c) =>
+    c.addEventListener("click", () => {
+      infoModal.style.display = "none";
+    }),
+  );
 
   window.addEventListener("click", (event) => {
     if (event.target == infoModal) {
