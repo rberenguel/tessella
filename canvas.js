@@ -10,12 +10,13 @@ const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2;
 const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
-const DEBUG = false; // Disables standalone being required
+const DEBUG = true; // Disables standalone being required
 
 export const BUILT_IN_PALETTES = [
   "palettes/bastille-8-32x.png",
   "palettes/berry-nebula-32x.png",
   "palettes/calm-sunset-32x.png",
+  "palettes/cga-palette-1-low-32x.png",
   "palettes/cyclope6-32x.png",
   "palettes/dawnbringers-8-color-32x.png",
   "palettes/eulbink-32x.png",
@@ -41,6 +42,7 @@ export const BUILT_IN_PALETTES = [
   "palettes/steam-lords-32x.png",
   "palettes/sunset-red-32x.png",
   "palettes/twilight-5-32x.png",
+  "palettes/vividmemory8-32x.png",
   "palettes/wish-gb-32x.png",
 ];
 
@@ -489,7 +491,12 @@ async function init() {
 
   const savedPaletteSrc =
     localStorage.getItem("savedPalette") || BUILT_IN_PALETTES[0];
-  await loadPalette(savedPaletteSrc);
+  try {
+    await loadPalette(savedPaletteSrc);
+  } catch (err) {
+    console.warn("Palette could not be found", err);
+    await loadPalette(BUILT_IN_PALETTES[0]);
+  }
 
   // We need to find the index for the cycle handler later
   const customPalette = await get("customPalette");
