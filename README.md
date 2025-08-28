@@ -2,8 +2,9 @@
 
 A pixel art camera.
 
-<img src="media/tessela.jpeg"/>
-<img src="media/tessela-2.jpeg"/>
+![](https://raw.githubusercontent.com/rberenguel/tessella/refs/heads/gh-pages/media/tessella.jpeg)
+![](https://raw.githubusercontent.com/rberenguel/tessella/refs/heads/gh-pages/media/tessella-2.jpeg)
+
 
 ## Credits
 
