@@ -10,7 +10,7 @@ const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2;
 const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
-const DEBUG = true; // Disables standalone being required
+const DEBUG = false; // Disables standalone being required
 
 export const BUILT_IN_PALETTES = [
   "palettes/bastille-8-32x.png",
