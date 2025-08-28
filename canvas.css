@@ -446,3 +446,51 @@ body.landscape #buttonContainer {
   text-decoration: none;
   cursor: pointer;
 }
+
+#palette-modal-content {
+  padding-right: 1em;
+  padding-left: 1em;
+}
+
+#palette-grid {
+  padding-top: 2em;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(25vw, 25vh), 1fr));
+  gap: 15px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+#palette-grid::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+}
+
+#palette-grid {
+  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+  scrollbar-width: none; /* For Firefox */
+}
+
+.palette-grid-item {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  cursor: pointer;
+  border: 2px solid #555;
+  border-radius: 5px;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+  height: fit-content;
+}
+
+.palette-grid-item:hover {
+  border-color: #fff;
+  transform: scale(1.01);
+}
+
+.mini-swatch {
+  width: 100%;
+  padding-bottom: 100%; /* Creates a square aspect ratio */
+  border-radius: 3px;
+}
