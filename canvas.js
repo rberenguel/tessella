@@ -10,7 +10,7 @@ const LOW_RES_HEIGHT = PIXEL_HEIGHT / 2;
 const FPS = 3;
 const FRAME_INTERVAL = 1000 / FPS;
 const FADE_DURATION_MS = 10;
-const DEBUG = false; // Disables standalone being required
+const DEBUG = true; // Disables standalone being required
 
 export const BUILT_IN_PALETTES = [
   "palettes/bastille-8-32x.png",
@@ -71,6 +71,9 @@ let isDithering = false;
 let isFrontCamera = false;
 let isDesktop = false;
 
+let portraitHeight = null,
+  portraitWidth = null;
+
 // --- UI Element Bounding Boxes for Hit Detection ---
 let uiBounds = {
   palette: {},
@@ -94,7 +97,15 @@ const loadBtn = document.getElementById("loadBtn");
 const infoModal = document.getElementById("infoModal");
 const closeButton = document.querySelectorAll(".close-button");
 
-const isLandscape = () => window.innerWidth > window.innerHeight;
+const isLandscape = () => window.outerWidth > window.outerHeight;
+
+const landscaping = () => {
+  if (isLandscape()) {
+    document.body.classList.add("landscape");
+  } else {
+    document.body.classList.remove("landscape");
+  }
+};
 
 async function fetchSelfManifest() {
   try {
@@ -139,7 +150,7 @@ async function startCameraWithConstraints(constraints) {
 }
 
 async function processFrame(source) {
-  const isViewLandscape = window.innerWidth > window.innerHeight;
+  const isViewLandscape = window.outerWidth > window.outerHeight;
 
   const targetWidth = isLowRes
     ? isViewLandscape
@@ -223,30 +234,31 @@ async function drawScene(source) {
   displayCtx.imageSmoothingEnabled = false;
   displayCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const w = canvas.width;
-  const h = canvas.height;
-  const unit = Math.min(w, h) / 100;
+  //const w = canvas.width;
+  //const h = canvas.height;
+  const unit = Math.min(portraitHeight, portraitWidth) / 100;
 
   const topChrome = LAYOUT.PORTRAIT_TOP_CHROME_H * unit;
   const bottomChrome = LAYOUT.PORTRAIT_BOTTOM_CHROME_H * unit;
   const sideChrome = LAYOUT.LANDSCAPE_SIDE_CHROME_W * unit;
 
   let viewfinder;
+
   if (isLandscape()) {
     document.body.classList.add("landscape");
     viewfinder = {
       x: sideChrome,
       y: 0,
-      width: w - sideChrome * 2,
-      height: h,
+      width: portraitHeight - sideChrome * 2,
+      height: portraitWidth,
     };
   } else {
     document.body.classList.remove("landscape");
     viewfinder = {
       x: 0,
       y: topChrome,
-      width: w,
-      height: h - topChrome - bottomChrome,
+      width: portraitWidth,
+      height: portraitHeight - topChrome - bottomChrome,
     };
   }
 
@@ -475,8 +487,17 @@ async function loadPalette(source) {
 
 async function init() {
   await fetchSelfManifest();
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const w = window.outerWidth;
+  const h = window.outerHeight;
+  if (h >= w) {
+    portraitHeight = h;
+    portraitWidth = w;
+  } else {
+    portraitHeight = w;
+    portraitWidth = h;
+  }
+  canvas.width = w;
+  canvas.height = h;
   initHaptic();
   isDesktop = !isMobile();
 
@@ -568,14 +589,10 @@ async function init() {
   canvas.addEventListener("touchstart", handleCanvasClick, { passive: true });
 
   const handleOrientationAndResize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.outerWidth;
+    canvas.height = window.outerHeight;
 
-    if (isLandscape()) {
-      document.body.classList.add("landscape");
-    } else {
-      document.body.classList.remove("landscape");
-    }
+    landscaping();
 
     const source = isLive
       ? video
@@ -707,6 +724,7 @@ async function init() {
     }
   });
   setInterval(() => {
+    landscaping();
     if (isLandscape()) {
       document.body.classList.add("landscape");
     } else {

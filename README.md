@@ -5,7 +5,6 @@ A pixel art camera.
 ![](https://raw.githubusercontent.com/rberenguel/tessella/refs/heads/gh-pages/media/tessella.jpeg)
 ![](https://raw.githubusercontent.com/rberenguel/tessella/refs/heads/gh-pages/media/tessella-2.jpeg)
 
-
 ## Credits
 
 - Palettes are from [LOSPEC](https://lospec.com/palette-list)
