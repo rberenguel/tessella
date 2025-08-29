@@ -33,6 +33,24 @@ const needsStandalone = () => {
 };
 
 async function init() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .then(registration => {
+          console.log("Service Worker registered:", registration);
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: "CACHE_PALETTES",
+              palettes: config.BUILT_IN_PALETTES
+            });
+          }
+        })
+        .catch(error => {
+          console.log("Service Worker registration failed:", error);
+        });
+    });
+  }
+
   await fetchSelfManifest();
   const w = window.outerWidth;
   const h = window.outerHeight;
@@ -57,9 +75,11 @@ async function init() {
     return;
   }
 
-  for (const paletteSrc of config.BUILT_IN_PALETTES) {
-    state.addLoadedPalette(paletteSrc, await getColorsFromSource(paletteSrc));
-  }
+  const palettePromises = config.BUILT_IN_PALETTES.map(async (paletteSrc) => {
+    const colors = await getColorsFromSource(paletteSrc);
+    state.addLoadedPalette(paletteSrc, colors);
+  });
+  await Promise.all(palettePromises);
   state.setAllPalettes([...config.BUILT_IN_PALETTES]);
 
   const customPalette = await get("customPalette");
