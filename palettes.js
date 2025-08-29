@@ -1,75 +1,61 @@
 // --- Configuration ---
 // This array is copied directly from your canvas.js file.
 // If you add more palettes there, you'll need to update this list.
-import { BUILT_IN_PALETTES } from "./canvas.js";
+import { BUILT_IN_PALETTES } from "./src/config.js";
+import { getColorsFromSource } from "./src/palette.js";
 
-/**
- * Extracts unique colors from an image source URL.
- * This function is copied from your canvas.js file.
- * @param {string} source - The URL of the palette image.
- * @returns {Promise<Array<[number, number, number]>>} A promise that resolves to an array of RGB color arrays.
- */
-async function getColorsFromSource(source) {
-  const img = new Image();
-  img.src = source;
-  // Wait for the image to load before processing it
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = reject;
-  });
 
-  // Use an offscreen canvas to draw the image and get its pixel data
-  const offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = img.width;
-  offscreenCanvas.height = img.height;
-  const ctx = offscreenCanvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
 
-  // Use a Set to store unique colors, preventing duplicates
-  const uniqueColors = new Set();
-  for (let i = 0; i < imageData.length; i += 4) {
-    // Skip transparent pixels
-    if (imageData[i + 3] < 255) continue;
-    uniqueColors.add(`${imageData[i]},${imageData[i + 1]},${imageData[i + 2]}`);
-  }
-
-  // Convert the set of color strings back to an array of number arrays
-  return Array.from(uniqueColors).map((str) => str.split(",").map(Number));
-}
+let loadedPalettes = new Map(); // Stores palette source URL -> [ [r,g,b], ... ]
 
 /**
  * Main function to render all palettes to the DOM.
  */
 async function renderPalettes() {
   const container = document.getElementById("palettes-container");
+  const paletteCountSpan = document.getElementById("palette-count");
   if (!container) {
     console.error("Container element not found!");
     return;
   }
 
-  // Loop through each palette source URL
+  // Pre-load all built-in palettes and store them in the cache
+  for (const paletteSrc of BUILT_IN_PALETTES) {
+    if (!loadedPalettes.has(paletteSrc)) {
+      loadedPalettes.set(paletteSrc, await getColorsFromSource(paletteSrc));
+    }
+  }
+
+  // Update the palette count after loading
+  if (paletteCountSpan) {
+    paletteCountSpan.textContent = `(${BUILT_IN_PALETTES.length} palettes)`;
+  }
+
+  // Loop through each palette source URL from the built-in palettes
   for (const paletteSrc of BUILT_IN_PALETTES) {
     try {
       // Create the main container for this palette
       const paletteItem = document.createElement("div");
       paletteItem.className = "palette-item";
 
-      // Create and append the title
+      // Create and append the title as a link
       const title = document.createElement("h2");
-      // Clean up the file name for display
-      title.textContent = paletteSrc
+      const titleLink = document.createElement("a");
+      const paletteName = paletteSrc
         .replace("palettes/", "")
-        .replace("-32x.png", "")
-        .replace(/-/g, " ");
+        .replace("-32x.png", "");
+      titleLink.textContent = paletteName.replace(/-/g, " ");
+      titleLink.href = `https://lospec.com/palette-list/${paletteName}`;
+      titleLink.target = "_blank"; // Open in new tab
+      title.appendChild(titleLink);
       paletteItem.appendChild(title);
 
       // Create the container for the color swatches
       const swatchContainer = document.createElement("div");
       swatchContainer.className = "swatch-container";
 
-      // Fetch and process the colors from the image
-      const colors = await getColorsFromSource(paletteSrc);
+      // Get colors from cache
+      const colors = loadedPalettes.get(paletteSrc);
 
       // Create and append a swatch for each color
       colors.forEach((color) => {

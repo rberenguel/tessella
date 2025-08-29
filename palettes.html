@@ -4,12 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tessella Palette Viewer</title>
+    <link rel="stylesheet" href="fonts/inter.css" />
     <style>
       /* Basic styles for the body and layout */
       body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-          Arial, sans-serif;
+        font-family: "Inter", sans-serif;
         background-color: #1a1a1a;
         color: #f0f0f0;
         margin: 0;
@@ -17,9 +16,15 @@
       }
       h1 {
         text-align: center;
-        margin-bottom: 3rem;
+        margin-bottom: 1rem;
         font-weight: 300;
         letter-spacing: 1px;
+      }
+      .subtitle {
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+        color: #aaa;
       }
       /* Main container for all the palette grids */
       #palettes-container {
@@ -51,6 +56,15 @@
         font-weight: 500;
         color: #aaa;
         word-wrap: break-word;
+        text-transform: uppercase;
+        font-family: "Inter", sans-serif;
+      }
+      .palette-item h2 a {
+        color: inherit; /* Keep the color from h2 */
+        text-decoration: none;
+      }
+      .palette-item h2 a:hover {
+        text-decoration: underline;
       }
       /* Grid container for the color swatches */
       .swatch-container {
@@ -68,11 +82,12 @@
     </style>
   </head>
   <body>
-    <h1>Tessella Palette Viewer</h1>
+    <h1>Tessella Palette Viewer <span id="palette-count"></span></h1>
+    <p class="subtitle">Click on the palette name to see it in Lospec</p>
     <div id="palettes-container">
       <!-- Palettes will be dynamically inserted here by the script -->
     </div>
 
-    <script type="module" src="palette-viewer.js"></script>
+    <script type="module" src="palettes.js"></script>
   </body>
 </html>
