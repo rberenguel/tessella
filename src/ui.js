@@ -274,18 +274,26 @@ export function setupEventListeners() {
 
   setInterval(() => {
     landscaping();
+    let resized = false;
     if (isLandscape()) {
       document.body.classList.add("landscape");
-      if (dom.canvas.width != state.portraitHeight) {
-        dom.canvas.height = state.portraitWidth;
+      if (dom.canvas.width !== state.portraitHeight || dom.canvas.height !== state.portraitWidth) {
         dom.canvas.width = state.portraitHeight;
+        dom.canvas.height = state.portraitWidth;
+        resized = true;
       }
     } else {
       document.body.classList.remove("landscape");
-      if (dom.canvas.height != state.portraitHeight) {
+      if (dom.canvas.width !== state.portraitWidth || dom.canvas.height !== state.portraitHeight) {
         dom.canvas.width = state.portraitWidth;
         dom.canvas.height = state.portraitHeight;
+        resized = true;
       }
+    }
+
+    if (resized) {
+      const source = state.isLive ? dom.video : state.frozenFrameSource || document.createElement("canvas");
+      drawScene(source);
     }
   }, 500);
 }
