@@ -178,14 +178,17 @@ export function quantizeWithDithering(imageData, targetPalette) {
   const height = imageData.height;
   const data = imageData.data;
 
-  // Create a floating-point copy for error diffusion
-  const floatPixels = new Float32Array((data.length / 4) * 3);
-  for (let i = 0; i < data.length; i += 4) {
-    const i3 = (i / 4) * 3;
-    floatPixels[i3] = data[i];
-    floatPixels[i3 + 1] = data[i + 1];
-    floatPixels[i3 + 2] = data[i + 2];
-  }
+  // 8x8 Bayer matrix
+  const bayerMatrix = [
+    [0, 32, 8, 40, 2, 34, 10, 42],
+    [48, 16, 56, 24, 50, 18, 58, 26],
+    [12, 44, 4, 36, 14, 46, 6, 38],
+    [60, 28, 52, 20, 62, 30, 54, 22],
+    [3, 35, 11, 43, 1, 33, 9, 41],
+    [51, 19, 59, 27, 49, 17, 57, 25],
+    [15, 47, 7, 39, 13, 45, 5, 37],
+    [63, 31, 55, 23, 61, 29, 53, 21],
+  ];
 
   const findClosest = (r, g, b, palette) => {
     let closest = palette[0];
@@ -203,42 +206,26 @@ export function quantizeWithDithering(imageData, targetPalette) {
     return closest;
   };
 
+  const DITHER_FACTOR = 4; // Adjust this to control dither strength
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const i3 = (y * width + x) * 3;
       const i4 = (y * width + x) * 4;
+      const matrixVal = bayerMatrix[y % 8][x % 8];
+      
+      // Normalize matrix value and apply dither
+      const dither = (matrixVal / 64 - 0.5) * DITHER_FACTOR;
 
-      // 1. Get current pixel color (includes accumulated error)
-      const oldR = floatPixels[i3];
-      const oldG = floatPixels[i3 + 1];
-      const oldB = floatPixels[i3 + 2];
+      const r = data[i4] + dither;
+      const g = data[i4 + 1] + dither;
+      const b = data[i4 + 2] + dither;
 
-      // 2. Find the closest color in the target palette
-      const newColor = findClosest(oldR, oldG, oldB, targetPalette);
+      const newColor = findClosest(r, g, b, targetPalette);
 
       data[i4] = newColor[0];
       data[i4 + 1] = newColor[1];
       data[i4 + 2] = newColor[2];
-
-      // 3. Calculate error
-      const errR = oldR - newColor[0];
-      const errG = oldG - newColor[1];
-      const errB = oldB - newColor[2];
-
-      // 4. Diffuse error
-      const diffuse = (dx, dy, factor) => {
-        if (x + dx >= 0 && x + dx < width && y + dy < height) {
-          const ni3 = ((y + dy) * width + (x + dx)) * 3;
-          floatPixels[ni3] += errR * factor;
-          floatPixels[ni3 + 1] += errG * factor;
-          floatPixels[ni3 + 2] += errB * factor;
-        }
-      };
-
-      diffuse(1, 0, 7 / 16);
-      diffuse(-1, 1, 3 / 16);
-      diffuse(0, 1, 5 / 16);
-      diffuse(1, 1, 1 / 16);
     }
   }
 }
+
