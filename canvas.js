@@ -743,8 +743,16 @@ async function init() {
     landscaping();
     if (isLandscape()) {
       document.body.classList.add("landscape");
+      if (canvas.width != portraitWidth) {
+        canvas.width = portraitWidth;
+        canvas.height = portraitHeight;
+      }
     } else {
       document.body.classList.remove("landscape");
+      if (canvas.height != portraitWidth) {
+        canvas.height = portraitWidth;
+        canvas.width = portraitHeight;
+      }
     }
   }, 500);
 }
