@@ -214,16 +214,33 @@ export function setupEventListeners() {
     wasLiveBeforeModal = state.isLive;
     state.setLive(false);
     dom.paletteGrid.innerHTML = "";
+
+    const getPaletteName = (source) => {
+      if (source.startsWith('data:')) return 'Custom';
+      const filename = source.split('/').pop();
+      return filename.replace(/-32x\.png$/, '').replace(/-/g, ' ');
+    };
+
     for (const [index, source] of state.allPalettes.entries()) {
       const item = document.createElement("div");
       item.className = "palette-grid-item";
+
+      const name = document.createElement("div");
+      name.className = "palette-name";
+      name.textContent = getPaletteName(source);
+      item.appendChild(name);
+
+      const swatchContainer = document.createElement("div");
+      swatchContainer.className = "mini-swatch-container";
       const colors = state.loadedPalettes.get(source);
       colors.forEach((color) => {
         const swatch = document.createElement("div");
         swatch.className = "mini-swatch";
         swatch.style.backgroundColor = `rgb(${color.join(",")})`;
-        item.appendChild(swatch);
+        swatchContainer.appendChild(swatch);
       });
+      item.appendChild(swatchContainer);
+
       item.addEventListener("click", async () => {
         state.setCurrentPaletteIndex(index);
         await loadPalette(source);

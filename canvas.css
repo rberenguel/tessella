@@ -498,9 +498,9 @@ body.landscape #buttonContainer {
 }
 
 .palette-grid-item {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 8px;
   cursor: pointer;
   border: 2px solid #555;
@@ -509,6 +509,26 @@ body.landscape #buttonContainer {
     transform 0.2s ease,
     border-color 0.2s ease;
   height: fit-content;
+  align-items: center;
+}
+
+.palette-name {
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  color: var(--chrome-fg);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-transform: uppercase;
+}
+
+.mini-swatch-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 100%;
 }
 
 .palette-grid-item:hover {

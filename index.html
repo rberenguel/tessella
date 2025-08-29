@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF--8" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="media/favicon.ico" type="image/x-icon" />
     <title>Tesseŀla</title>
@@ -21,7 +21,6 @@
     <link rel="stylesheet" href="canvas.css" />
   </head>
   <body>
-    <!-- The main container for the app's visual output -->
     <header id="palette">
       <div id="topContainer">
         <button id="settingsBtn" aria-label="Settings">
@@ -33,14 +32,10 @@
     <div class="app-container">
       <main class="viewfinder">
         <div class="canvas-container">
-          <!-- The primary canvas for displaying the video feed and UI -->
           <canvas id="displayCanvas"></canvas>
-          <!-- A secondary canvas used for smooth transitions between frames -->
           <canvas id="transitionCanvas"></canvas>
         </div>
-        <!-- The video element remains hidden, serving only as a data source -->
         <video id="videoFeed" playsinline autoplay muted></video>
-        <!-- The file input is also hidden, triggered programmatically for desktop use -->
         <input
           type="file"
           id="imageInput"
@@ -72,7 +67,6 @@
         </button>
       </div>
     </footer>
-    <!-- The main application logic -->
     <script src="libs/interact.min.js"></script>
     <script src="src/main.js" type="module"></script>
     <div id="paletteModal" class="modal">
@@ -87,35 +81,45 @@
         <h2>
           <span style="font-family: &quot;Inter&quot;">Tesseŀla</span>
         </h2>
-        <h3>Pixel cam <span id="version">{{version}}</span></h3>
+        <h3>Pixel Cam <span id="version">{{version}}</span></h3>
         <h4>By Ruben Berenguel, 2025</h4>
         <hr />
-        <p><code>Palettes</code>: tap to switch, long tap for modal</p>
-        <p><code>Square button:</code> low/lower res.</p>
-        <p><code>Eye button</code>: Blue noise dithering on/off.</p>
+        <h4>Controls</h4>
         <p>
-          <code>Upload button</code>: Use an existing image, or upload a
-          (single) custom palette (Mx32 image composed of 32x32 squares)
+            <code>Palette Bar (Top):</code> <b>Tap</b> to cycle through palettes. <b>Long press</b> to open the full palette library.
         </p>
-        <p><code>Face button</code>: Switch to front camera (and then back).</p>
         <p>
-          <code>Long press on the image</code> once taken to save / share it.
-          Sometimes it can fail. If it does, tap twice on the lower resolution
-          and that seems to fix it.
+            <code>Shutter (Center):</code> <b>Tap</b> to freeze the live view. <b>Tap again</b> to resume the live camera.
         </p>
-
+         <p>
+            <code>Resolution (Square Icon):</code> Toggles between low and ultra-low resolution modes.
+        </p>
         <p>
-          Palettes are from Lospec, you can find the full list in
+            <code>Dither (Eye Icon):</code> Toggles the blue noise dithering effect on or off for smoother color transitions.
+        </p>
+        <p>
+            <code>Upload (Upload Icon):</code> Allows you to process an existing image from your device. You can also use this to upload a custom palette (see below).
+        </p>
+         <p>
+            <code>Flip Camera (Face Icon):</code> Switches between the front-facing and rear-facing cameras on your device.
+        </p>
+        <hr />
+        <h4>Usage Tips</h4>
+        <p>
+          <b>Save & Share:</b> <b>Long press on a captured image</b> to open your device's native share menu or to save the image. The saved image includes a strip of the active color palette.
+        </p>
+        <p>
+          <b>Custom Palettes:</b> Use the <b>Upload button</b> to load a custom palette. A valid palette is a <b>32xM pixel image</b> where each 32x32 square is a solid color. The app will automatically extract the colors and save the palette for future use (just one palette).
+        </p>
+        <p>
+          The full list with links of built-in palettes from Lospec can be found in the
           <a href="https://github.com/rberenguel/tessella"
-            >this app's repository</a
-          >
+            >app's repository</a
+          >.
         </p>
         <hr />
         <p>
-          The layout can be somewhat unstable. This is because iOS Safari does
-          not respect preferred orientation lock, so I had to create a
-          responsive layout that looks the same when the phone rotates. This
-          would not happen on Android, but I have to use the same way in both.
+          This app works best when installed as a Progressive Web App (PWA). Use your browser's "Add to Home Screen" option for the best experience.
         </p>
       </div>
     </div>
