@@ -322,11 +322,6 @@ function displayPalette(palette) {
   });
 }
 
-function handleCanvasClick(event) {
-  // This function is primarily for future canvas-specific interactions
-  // The palette interactions are now handled by the #palette header directly.
-}
-
 async function handleShutterClickMobile() {
   isLive = !isLive;
   if (isLive) {
@@ -341,21 +336,6 @@ async function handleShutterClickMobile() {
     frozenFrameSource = tempCanvas;
     shutterBtn.classList.add("active");
     await drawScene(frozenFrameSource);
-  }
-}
-
-async function handleUIAction(actionType) {
-  triggerHaptic();
-  switch (actionType) {
-    case "palette":
-      currentPaletteIndex = (currentPaletteIndex + 1) % allPalettes.length;
-      await loadPalette(allPalettes[currentPaletteIndex]);
-      displayPalette(currentPalette);
-      const source = isLive
-        ? video
-        : frozenFrameSource || document.createElement("canvas");
-      drawScene(source);
-      break;
   }
 }
 
@@ -375,7 +355,7 @@ async function handleImageFile(event) {
 
         // Update allPalettes with the new custom palette
         // Remove any old custom palette first to avoid duplicates
-        allPalettes = allPalettes.filter(p => !p.startsWith("data:image"));
+        allPalettes = allPalettes.filter((p) => !p.startsWith("data:image"));
         allPalettes.push(dataUrl);
         currentPaletteIndex = allPalettes.length - 1;
 
@@ -557,28 +537,32 @@ async function init() {
     startCameraWithConstraints(cameraConstraints[mode]);
   });
 
-  document.getElementById("palette").addEventListener("click", async (event) => {
-    // Only trigger palette cycle if the settings button wasn't clicked
-    if (event.target.closest("#settingsBtn")) {
-      return;
-    }
-    triggerHaptic();
-    currentPaletteIndex = (currentPaletteIndex + 1) % allPalettes.length;
-    await loadPalette(allPalettes[currentPaletteIndex]);
-    const source = isLive
-      ? video
-      : frozenFrameSource || document.createElement("canvas");
-    drawScene(source);
-  });
-
-  canvas.addEventListener("click", handleCanvasClick);
-  canvas.addEventListener("touchstart", handleCanvasClick, { passive: true });
+  document
+    .getElementById("palette")
+    .addEventListener("click", async (event) => {
+      // Only trigger palette cycle if the settings button wasn't clicked
+      if (event.target.closest("#settingsBtn")) {
+        return;
+      }
+      triggerHaptic();
+      currentPaletteIndex = (currentPaletteIndex + 1) % allPalettes.length;
+      await loadPalette(allPalettes[currentPaletteIndex]);
+      const source = isLive
+        ? video
+        : frozenFrameSource || document.createElement("canvas");
+      drawScene(source);
+    });
 
   const handleOrientationAndResize = () => {
-    canvas.width = window.outerWidth;
-    canvas.height = window.outerHeight;
-
     landscaping();
+
+    if (isLandscape()) {
+      canvas.width = portraitWidth;
+      canvas.height = portraitHeight;
+    } else {
+      canvas.width = portraitHeight;
+      canvas.height = portraitWidth;
+    }
 
     const source = isLive
       ? video
@@ -597,14 +581,17 @@ async function init() {
       try {
         const blob = await new Promise((resolve) => {
           const upscaleFactor = 8;
-          const originalUpscaledWidth = lastProcessedFrame.width * upscaleFactor;
-          const originalUpscaledHeight = lastProcessedFrame.height * upscaleFactor;
+          const originalUpscaledWidth =
+            lastProcessedFrame.width * upscaleFactor;
+          const originalUpscaledHeight =
+            lastProcessedFrame.height * upscaleFactor;
 
           let newUpscaledWidth = originalUpscaledWidth;
           let newUpscaledHeight = originalUpscaledHeight;
           const PALETTE_STRIP_SIZE = 32; // 32 pixels in final resolution
 
-          const isPortrait = lastProcessedFrame.height > lastProcessedFrame.width;
+          const isPortrait =
+            lastProcessedFrame.height > lastProcessedFrame.width;
 
           if (isPortrait) {
             newUpscaledHeight += PALETTE_STRIP_SIZE;
@@ -641,7 +628,8 @@ async function init() {
                   swatchHeight,
                 );
               });
-            } else { // Landscape
+            } else {
+              // Landscape
               const swatchWidth = PALETTE_STRIP_SIZE;
               const swatchHeight = newUpscaledHeight / currentPalette.length;
               currentPalette.forEach((color, index) => {
@@ -656,7 +644,7 @@ async function init() {
             }
           }
           upscaledCanvas.toBlob(resolve, "image/png");
-          }); 
+        });
         const file = new File([blob], `tessella-${Date.now()}.png`, {
           type: "image/png",
         });
