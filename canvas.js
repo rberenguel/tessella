@@ -744,8 +744,8 @@ async function init() {
     if (isLandscape()) {
       document.body.classList.add("landscape");
       if (canvas.width != portraitHeight) {
-        canvas.width = portraitWidth;
-        canvas.height = portraitHeight;
+        canvas.height = portraitWidth;
+        canvas.width = portraitHeight;
       }
     } else {
       document.body.classList.remove("landscape");
