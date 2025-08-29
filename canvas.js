@@ -71,6 +71,9 @@ let isDithering = false;
 let isFrontCamera = false;
 let isDesktop = false;
 
+let loadedPalettes = new Map(); // Stores palette source URL -> [ [r,g,b], ... ]
+let allPalettes = []; // Stores palette source URLs, including custom
+
 let portraitHeight = null,
   portraitWidth = null;
 
@@ -320,25 +323,8 @@ function displayPalette(palette) {
 }
 
 function handleCanvasClick(event) {
-  const rect = canvas.getBoundingClientRect();
-  const touch = event.touches ? event.touches[0] : event;
-  const physicalClickX = touch.clientX - rect.left;
-  const physicalClickY = touch.clientY - rect.top;
-
-  const x = physicalClickX * (canvas.width / rect.width);
-  const y = physicalClickY * (canvas.height / rect.height);
-
-  const pBound = uiBounds.palette;
-  if (
-    pBound.w &&
-    x > pBound.x &&
-    x < pBound.x + pBound.w &&
-    y > pBound.y &&
-    y < pBound.y + pBound.h
-  ) {
-    handleUIAction(pBound.type);
-    return;
-  }
+  // This function is primarily for future canvas-specific interactions
+  // The palette interactions are now handled by the #palette header directly.
 }
 
 async function handleShutterClickMobile() {
@@ -387,9 +373,11 @@ async function handleImageFile(event) {
         await loadPalette(dataUrl); // Load it
         alert("Custom palette loaded and saved!");
 
-        const customPalette = await get("customPalette");
-        const currentFullPaletteList = [...BUILT_IN_PALETTES, customPalette];
-        currentPaletteIndex = currentFullPaletteList.length - 1;
+        // Update allPalettes with the new custom palette
+        // Remove any old custom palette first to avoid duplicates
+        allPalettes = allPalettes.filter(p => !p.startsWith("data:image"));
+        allPalettes.push(dataUrl);
+        currentPaletteIndex = allPalettes.length - 1;
 
         const source = isLive
           ? video
@@ -459,27 +447,17 @@ async function getColorsFromSource(source) {
   return Array.from(uniqueColors).map((str) => str.split(",").map(Number));
 }
 async function loadPalette(source) {
-  const img = new Image();
-  img.src = source;
-  await new Promise((resolve) => {
-    img.onload = resolve;
-  });
-
-  const offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = img.width;
-  offscreenCanvas.height = img.height;
-  const ctx = offscreenCanvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
-  const uniqueColors = new Set();
-
-  for (let i = 0; i < imageData.length; i += 4) {
-    if (imageData[i + 3] < 255) continue;
-    uniqueColors.add(`${imageData[i]},${imageData[i + 1]},${imageData[i + 2]}`);
+  let colors;
+  if (loadedPalettes.has(source)) {
+    colors = loadedPalettes.get(source);
+  } else {
+    // This case should primarily be for newly uploaded custom palettes
+    // that weren't pre-loaded.
+    colors = await getColorsFromSource(source);
+    loadedPalettes.set(source, colors);
   }
-  currentPalette = Array.from(uniqueColors).map((str) =>
-    str.split(",").map(Number),
-  );
+
+  currentPalette = colors;
   localStorage.setItem("savedPalette", source);
   displayPalette(currentPalette);
   updateTheme(currentPalette);
@@ -510,23 +488,33 @@ async function init() {
     return;
   }
 
-  const savedPaletteSrc =
-    localStorage.getItem("savedPalette") || BUILT_IN_PALETTES[0];
-  try {
-    await loadPalette(savedPaletteSrc);
-  } catch (err) {
-    console.warn("Palette could not be found", err);
-    await loadPalette(BUILT_IN_PALETTES[0]);
+  // Pre-load all built-in palettes
+  for (const paletteSrc of BUILT_IN_PALETTES) {
+    loadedPalettes.set(paletteSrc, await getColorsFromSource(paletteSrc));
+  }
+  allPalettes = [...BUILT_IN_PALETTES];
+
+  // Load custom palette if it exists
+  const customPalette = await get("customPalette");
+  if (customPalette) {
+    loadedPalettes.set(customPalette, await getColorsFromSource(customPalette));
+    allPalettes.push(customPalette);
   }
 
-  // We need to find the index for the cycle handler later
-  const customPalette = await get("customPalette");
-  const currentFullPaletteList = [...BUILT_IN_PALETTES];
-  if (customPalette) {
-    currentFullPaletteList.push(customPalette);
+  const savedPaletteSrc =
+    localStorage.getItem("savedPalette") || allPalettes[0];
+  try {
+    // Ensure the saved palette is in allPalettes, if not, default to the first one
+    if (!allPalettes.includes(savedPaletteSrc)) {
+      throw new Error("Saved palette not found in available palettes.");
+    }
+    currentPaletteIndex = allPalettes.indexOf(savedPaletteSrc);
+    await loadPalette(savedPaletteSrc);
+  } catch (err) {
+    console.warn("Palette could not be found or is invalid, defaulting.", err);
+    currentPaletteIndex = 0;
+    await loadPalette(allPalettes[0]);
   }
-  currentPaletteIndex = currentFullPaletteList.indexOf(savedPaletteSrc);
-  if (currentPaletteIndex === -1) currentPaletteIndex = 0;
 
   imageInput.addEventListener("change", handleImageFile);
   loadBtn.addEventListener("click", () => imageInput.click());
@@ -569,16 +557,14 @@ async function init() {
     startCameraWithConstraints(cameraConstraints[mode]);
   });
 
-  palettePreview.addEventListener("click", async () => {
-    const customPalette = await get("customPalette");
-    const currentFullPaletteList = [...BUILT_IN_PALETTES];
-    if (customPalette) {
-      currentFullPaletteList.push(customPalette);
+  document.getElementById("palette").addEventListener("click", async (event) => {
+    // Only trigger palette cycle if the settings button wasn't clicked
+    if (event.target.closest("#settingsBtn")) {
+      return;
     }
-
-    currentPaletteIndex =
-      (currentPaletteIndex + 1) % currentFullPaletteList.length;
-    await loadPalette(currentFullPaletteList[currentPaletteIndex]);
+    triggerHaptic();
+    currentPaletteIndex = (currentPaletteIndex + 1) % allPalettes.length;
+    await loadPalette(allPalettes[currentPaletteIndex]);
     const source = isLive
       ? video
       : frozenFrameSource || document.createElement("canvas");
@@ -663,19 +649,11 @@ async function init() {
     isLive = false;
     paletteGrid.innerHTML = "";
 
-    const customPalette = await get("customPalette");
-    const currentFullPaletteList = [...BUILT_IN_PALETTES];
-    if (customPalette) {
-      console.log("Yes custom palette");
-      currentFullPaletteList.push(customPalette);
-    }
-
-    for (const [index, source] of currentFullPaletteList.entries()) {
-      console.log(source);
+    for (const [index, source] of allPalettes.entries()) {
       const item = document.createElement("div");
       item.className = "palette-grid-item";
 
-      const colors = await getColorsFromSource(source);
+      const colors = loadedPalettes.get(source);
       colors.forEach((color) => {
         const swatch = document.createElement("div");
         swatch.className = "mini-swatch";
@@ -698,7 +676,11 @@ async function init() {
   };
 
   // UPDATED interact.js call to be async
-  interact("#palettePreview").on("hold", async () => {
+  interact("#palette").on("hold", async (event) => {
+    // Only trigger modal if the settings button wasn't held
+    if (event.target.closest("#settingsBtn")) {
+      return;
+    }
     await populateAndShowPaletteModal();
   });
 
