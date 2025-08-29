@@ -597,20 +597,66 @@ async function init() {
       try {
         const blob = await new Promise((resolve) => {
           const upscaleFactor = 8;
+          const originalUpscaledWidth = lastProcessedFrame.width * upscaleFactor;
+          const originalUpscaledHeight = lastProcessedFrame.height * upscaleFactor;
+
+          let newUpscaledWidth = originalUpscaledWidth;
+          let newUpscaledHeight = originalUpscaledHeight;
+          const PALETTE_STRIP_SIZE = 32; // 32 pixels in final resolution
+
+          const isPortrait = lastProcessedFrame.height > lastProcessedFrame.width;
+
+          if (isPortrait) {
+            newUpscaledHeight += PALETTE_STRIP_SIZE;
+          } else {
+            newUpscaledWidth += PALETTE_STRIP_SIZE;
+          }
+
           const upscaledCanvas = document.createElement("canvas");
-          upscaledCanvas.width = lastProcessedFrame.width * upscaleFactor;
-          upscaledCanvas.height = lastProcessedFrame.height * upscaleFactor;
+          upscaledCanvas.width = newUpscaledWidth;
+          upscaledCanvas.height = newUpscaledHeight;
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;
+
+          // Draw the main image
           upscaledCtx.drawImage(
             lastProcessedFrame,
             0,
             0,
-            upscaledCanvas.width,
-            upscaledCanvas.height,
+            originalUpscaledWidth,
+            originalUpscaledHeight,
           );
+
+          // Draw the palette strip
+          if (currentPalette && currentPalette.length > 0) {
+            if (isPortrait) {
+              const swatchHeight = PALETTE_STRIP_SIZE;
+              const swatchWidth = newUpscaledWidth / currentPalette.length;
+              currentPalette.forEach((color, index) => {
+                upscaledCtx.fillStyle = `rgb(${color.join(",")})`;
+                upscaledCtx.fillRect(
+                  index * swatchWidth,
+                  originalUpscaledHeight,
+                  swatchWidth,
+                  swatchHeight,
+                );
+              });
+            } else { // Landscape
+              const swatchWidth = PALETTE_STRIP_SIZE;
+              const swatchHeight = newUpscaledHeight / currentPalette.length;
+              currentPalette.forEach((color, index) => {
+                upscaledCtx.fillStyle = `rgb(${color.join(",")})`;
+                upscaledCtx.fillRect(
+                  originalUpscaledWidth,
+                  index * swatchHeight,
+                  swatchWidth,
+                  swatchHeight,
+                );
+              });
+            }
+          }
           upscaledCanvas.toBlob(resolve, "image/png");
-        });
+          }); 
         const file = new File([blob], `tessella-${Date.now()}.png`, {
           type: "image/png",
         });
