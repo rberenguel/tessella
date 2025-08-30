@@ -4,8 +4,6 @@
 import { BUILT_IN_PALETTES } from "./src/config.js";
 import { getColorsFromSource } from "./src/palette.js";
 
-
-
 let loadedPalettes = new Map(); // Stores palette source URL -> [ [r,g,b], ... ]
 
 /**

@@ -1,4 +1,3 @@
-
 import { get, set } from "../libs/idb-keyval.js";
 import * as dom from "./dom.js";
 import * as state from "./state.js";
@@ -39,7 +38,9 @@ async function handleImageFile(event) {
         await loadPalette(dataUrl); // Load it
         alert("Custom palette loaded and saved!");
 
-        let palettes = state.allPalettes.filter((p) => !p.startsWith("data:image"));
+        let palettes = state.allPalettes.filter(
+          (p) => !p.startsWith("data:image"),
+        );
         palettes.push(dataUrl);
         state.setAllPalettes(palettes);
         state.setCurrentPaletteIndex(state.allPalettes.length - 1);
@@ -85,14 +86,16 @@ export function setupEventListeners() {
     triggerHaptic();
     state.setLowRes(!state.isLowRes);
     dom.resToggleBtn.classList.toggle("active", state.isLowRes);
-    if (!state.isLive && state.frozenFrameSource) await drawScene(state.frozenFrameSource);
+    if (!state.isLive && state.frozenFrameSource)
+      await drawScene(state.frozenFrameSource);
   });
 
   dom.ditherToggleBtn.addEventListener("click", async () => {
     triggerHaptic();
     state.setDithering(!state.isDithering);
     dom.ditherToggleBtn.classList.toggle("active", state.isDithering);
-    if (!state.isLive && state.frozenFrameSource) await drawScene(state.frozenFrameSource);
+    if (!state.isLive && state.frozenFrameSource)
+      await drawScene(state.frozenFrameSource);
   });
 
   dom.reverseCameraBtn.addEventListener("click", () => {
@@ -102,25 +105,37 @@ export function setupEventListeners() {
     dom.shutterBtn.classList.remove("active");
     if (state.isFrontCamera) {
       dom.reverseCameraBtn.querySelector("span").classList.add("iconoir-lens");
-      dom.reverseCameraBtn.querySelector("span").classList.remove("iconoir-face-id");
+      dom.reverseCameraBtn
+        .querySelector("span")
+        .classList.remove("iconoir-face-id");
     } else {
-      dom.reverseCameraBtn.querySelector("span").classList.remove("iconoir-lens");
-      dom.reverseCameraBtn.querySelector("span").classList.add("iconoir-face-id");
+      dom.reverseCameraBtn
+        .querySelector("span")
+        .classList.remove("iconoir-lens");
+      dom.reverseCameraBtn
+        .querySelector("span")
+        .classList.add("iconoir-face-id");
     }
     const mode = state.isFrontCamera ? "user" : "environment";
     startCameraWithConstraints(getCameraConstraints(mode));
   });
 
-  document.getElementById("palette").addEventListener("click", async (event) => {
-    if (event.target.closest("#settingsBtn")) {
-      return;
-    }
-    triggerHaptic();
-    state.setCurrentPaletteIndex((state.currentPaletteIndex + 1) % state.allPalettes.length);
-    await loadPalette(state.allPalettes[state.currentPaletteIndex]);
-    const source = state.isLive ? dom.video : state.frozenFrameSource || document.createElement("canvas");
-    drawScene(source);
-  });
+  document
+    .getElementById("palette")
+    .addEventListener("click", async (event) => {
+      if (event.target.closest("#settingsBtn")) {
+        return;
+      }
+      triggerHaptic();
+      state.setCurrentPaletteIndex(
+        (state.currentPaletteIndex + 1) % state.allPalettes.length,
+      );
+      await loadPalette(state.allPalettes[state.currentPaletteIndex]);
+      const source = state.isLive
+        ? dom.video
+        : state.frozenFrameSource || document.createElement("canvas");
+      drawScene(source);
+    });
 
   const handleOrientationAndResize = () => {
     landscaping();
@@ -131,7 +146,9 @@ export function setupEventListeners() {
       dom.canvas.width = state.portraitWidth;
       dom.canvas.height = state.portraitHeight;
     }
-    const source = state.isLive ? dom.video : state.frozenFrameSource || document.createElement("canvas");
+    const source = state.isLive
+      ? dom.video
+      : state.frozenFrameSource || document.createElement("canvas");
     drawScene(source);
   };
 
@@ -146,12 +163,15 @@ export function setupEventListeners() {
       try {
         const blob = await new Promise((resolve) => {
           const upscaleFactor = 8;
-          const originalUpscaledWidth = state.lastProcessedFrame.width * upscaleFactor;
-          const originalUpscaledHeight = state.lastProcessedFrame.height * upscaleFactor;
+          const originalUpscaledWidth =
+            state.lastProcessedFrame.width * upscaleFactor;
+          const originalUpscaledHeight =
+            state.lastProcessedFrame.height * upscaleFactor;
           let newUpscaledWidth = originalUpscaledWidth;
           let newUpscaledHeight = originalUpscaledHeight;
           const PALETTE_STRIP_SIZE = 32;
-          const isPortrait = state.lastProcessedFrame.height > state.lastProcessedFrame.width;
+          const isPortrait =
+            state.lastProcessedFrame.height > state.lastProcessedFrame.width;
           if (isPortrait) {
             newUpscaledHeight += PALETTE_STRIP_SIZE;
           } else {
@@ -162,28 +182,52 @@ export function setupEventListeners() {
           upscaledCanvas.height = newUpscaledHeight;
           const upscaledCtx = upscaledCanvas.getContext("2d");
           upscaledCtx.imageSmoothingEnabled = false;
-          upscaledCtx.drawImage(state.lastProcessedFrame, 0, 0, originalUpscaledWidth, originalUpscaledHeight);
+          upscaledCtx.drawImage(
+            state.lastProcessedFrame,
+            0,
+            0,
+            originalUpscaledWidth,
+            originalUpscaledHeight,
+          );
           if (state.currentPalette && state.currentPalette.length > 0) {
             if (isPortrait) {
               const swatchHeight = PALETTE_STRIP_SIZE;
-              const swatchWidth = newUpscaledWidth / state.currentPalette.length;
+              const swatchWidth =
+                newUpscaledWidth / state.currentPalette.length;
               state.currentPalette.forEach((color, index) => {
                 upscaledCtx.fillStyle = `rgb(${color.join(",")})`;
-                upscaledCtx.fillRect(index * swatchWidth, originalUpscaledHeight, swatchWidth, swatchHeight);
+                upscaledCtx.fillRect(
+                  index * swatchWidth,
+                  originalUpscaledHeight,
+                  swatchWidth,
+                  swatchHeight,
+                );
               });
             } else {
               const swatchWidth = PALETTE_STRIP_SIZE;
-              const swatchHeight = newUpscaledHeight / state.currentPalette.length;
+              const swatchHeight =
+                newUpscaledHeight / state.currentPalette.length;
               state.currentPalette.forEach((color, index) => {
                 upscaledCtx.fillStyle = `rgb(${color.join(",")})`;
-                upscaledCtx.fillRect(originalUpscaledWidth, index * swatchHeight, swatchWidth, swatchHeight);
+                upscaledCtx.fillRect(
+                  originalUpscaledWidth,
+                  index * swatchHeight,
+                  swatchWidth,
+                  swatchHeight,
+                );
               });
             }
           }
           upscaledCanvas.toBlob(resolve, "image/png");
         });
-        const file = new File([blob], `tessella-${Date.now()}.png`, { type: "image/png" });
-        if (!state.isDesktop && navigator.share && navigator.canShare({ files: [file] })) {
+        const file = new File([blob], `tessella-${Date.now()}.png`, {
+          type: "image/png",
+        });
+        if (
+          !state.isDesktop &&
+          navigator.share &&
+          navigator.canShare({ files: [file] })
+        ) {
           await navigator.share({ files: [file], title: "Tesseŀla" });
         } else {
           const link = document.createElement("a");
@@ -193,7 +237,8 @@ export function setupEventListeners() {
           URL.revokeObjectURL(link.href);
         }
       } catch (err) {
-        if (err.name !== "AbortError") console.error("Share/Download failed:", err);
+        if (err.name !== "AbortError")
+          console.error("Share/Download failed:", err);
       }
     }, 500);
   };
@@ -216,9 +261,9 @@ export function setupEventListeners() {
     dom.paletteGrid.innerHTML = "";
 
     const getPaletteName = (source) => {
-      if (source.startsWith('data:')) return 'Custom';
-      const filename = source.split('/').pop();
-      return filename.replace(/-32x\.png$/, '').replace(/-/g, ' ');
+      if (source.startsWith("data:")) return "Custom";
+      const filename = source.split("/").pop();
+      return filename.replace(/-32x\.png$/, "").replace(/-/g, " ");
     };
 
     for (const [index, source] of state.allPalettes.entries()) {
@@ -244,7 +289,9 @@ export function setupEventListeners() {
       item.addEventListener("click", async () => {
         state.setCurrentPaletteIndex(index);
         await loadPalette(source);
-        const redrawSource = state.isLive ? dom.video : state.frozenFrameSource || document.createElement("canvas");
+        const redrawSource = state.isLive
+          ? dom.video
+          : state.frozenFrameSource || document.createElement("canvas");
         drawScene(redrawSource);
         dom.paletteModal.style.display = "none";
         if (wasLiveBeforeModal) {
@@ -280,7 +327,7 @@ export function setupEventListeners() {
   Array.from(dom.closeButton).map((c) =>
     c.addEventListener("click", () => {
       dom.infoModal.style.display = "none";
-    })
+    }),
   );
 
   window.addEventListener("click", (event) => {
@@ -294,14 +341,20 @@ export function setupEventListeners() {
     let resized = false;
     if (isLandscape()) {
       document.body.classList.add("landscape");
-      if (dom.canvas.width !== state.portraitHeight || dom.canvas.height !== state.portraitWidth) {
+      if (
+        dom.canvas.width !== state.portraitHeight ||
+        dom.canvas.height !== state.portraitWidth
+      ) {
         dom.canvas.width = state.portraitHeight;
         dom.canvas.height = state.portraitWidth;
         resized = true;
       }
     } else {
       document.body.classList.remove("landscape");
-      if (dom.canvas.width !== state.portraitWidth || dom.canvas.height !== state.portraitHeight) {
+      if (
+        dom.canvas.width !== state.portraitWidth ||
+        dom.canvas.height !== state.portraitHeight
+      ) {
         dom.canvas.width = state.portraitWidth;
         dom.canvas.height = state.portraitHeight;
         resized = true;
@@ -309,7 +362,9 @@ export function setupEventListeners() {
     }
 
     if (resized) {
-      const source = state.isLive ? dom.video : state.frozenFrameSource || document.createElement("canvas");
+      const source = state.isLive
+        ? dom.video
+        : state.frozenFrameSource || document.createElement("canvas");
       drawScene(source);
     }
   }, 500);

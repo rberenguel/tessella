@@ -250,6 +250,20 @@ body.landscape #palettePreview {
   left: 30%;
 }
 
+#paletteName {
+  grid-column: 1 / -1;
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  color: var(--chrome-fg);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
 .swatch {
   width: calc(5 * min(1vh, 1vw));
   height: calc(5 * min(1vh, 1vw));

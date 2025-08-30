@@ -25,5 +25,5 @@ export async function startCameraWithConstraints(constraints) {
 }
 
 export function getCameraConstraints(mode) {
-    return cameraConstraints[mode];
+  return cameraConstraints[mode];
 }

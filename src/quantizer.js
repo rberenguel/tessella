@@ -212,7 +212,7 @@ export function quantizeWithDithering(imageData, targetPalette) {
     for (let x = 0; x < width; x++) {
       const i4 = (y * width + x) * 4;
       const matrixVal = bayerMatrix[y % 8][x % 8];
-      
+
       // Normalize matrix value and apply dither
       const dither = (matrixVal / 64 - 0.5) * DITHER_FACTOR;
 
@@ -228,4 +228,3 @@ export function quantizeWithDithering(imageData, targetPalette) {
     }
   }
 }
-

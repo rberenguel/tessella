@@ -28,24 +28,27 @@ const isMobile = () => "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
 const needsStandalone = () => {
   const standaloneiOS = window.navigator.standalone === true;
-  const standaloneAndroid = window.matchMedia("(display-mode: standalone)").matches;
+  const standaloneAndroid = window.matchMedia(
+    "(display-mode: standalone)",
+  ).matches;
   return isMobile() && !standaloneiOS && !standaloneAndroid && !config.DEBUG;
 };
 
 async function init() {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js")
-        .then(registration => {
+      navigator.serviceWorker
+        .register("./sw.js")
+        .then((registration) => {
           console.log("Service Worker registered:", registration);
           if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: "CACHE_PALETTES",
-              palettes: config.BUILT_IN_PALETTES
+              palettes: config.BUILT_IN_PALETTES,
             });
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.log("Service Worker registration failed:", error);
         });
     });
@@ -84,11 +87,15 @@ async function init() {
 
   const customPalette = await get("customPalette");
   if (customPalette) {
-    state.addLoadedPalette(customPalette, await getColorsFromSource(customPalette));
+    state.addLoadedPalette(
+      customPalette,
+      await getColorsFromSource(customPalette),
+    );
     state.allPalettes.push(customPalette);
   }
 
-  const savedPaletteSrc = localStorage.getItem("savedPalette") || state.allPalettes[0];
+  const savedPaletteSrc =
+    localStorage.getItem("savedPalette") || state.allPalettes[0];
   try {
     if (!state.allPalettes.includes(savedPaletteSrc)) {
       throw new Error("Saved palette not found in available palettes.");

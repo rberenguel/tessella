@@ -10,21 +10,21 @@ This document outlines the plan to refactor the monolithic `canvas.js` file into
 
 The existing `canvas.js` will be broken down into the following modules:
 
--   **`src/config.js`**: Will contain all static configuration and constants, such as `PIXEL_WIDTH`, `PIXEL_HEIGHT`, `BUILT_IN_PALETTES`, and the `LAYOUT` object.
--   **`src/state.js`**: Will manage the application's dynamic state. All state variables (`currentPalette`, `isLive`, `isLowRes`, etc.) will be defined and exported from here, along with functions to modify them.
--   **`src/camera.js`**: Will handle all camera-related functionality, including initialization (`startCameraWithConstraints`) and camera switching logic.
--   **`src/palette.js`**: Will be responsible for palette management, including loading palettes from sources (`getColorsFromSource`), applying them (`loadPalette`), and updating the UI theme (`displayPalette`, `updateTheme`).
--   **`src/ui.js`**: Will manage all user interface interactions and event handling. This includes setting up event listeners for buttons, modals, and handling orientation or resize events.
--   **`src/rendering.js`**: Will contain the core rendering pipeline, including processing video or image frames (`processFrame`) and drawing them to the canvas (`drawScene`, `runLiveView`).
--   **`src/main.js`**: Will serve as the main entry point for the application. It will import necessary modules and call the main `init()` function to start the application.
+- **`src/config.js`**: Will contain all static configuration and constants, such as `PIXEL_WIDTH`, `PIXEL_HEIGHT`, `BUILT_IN_PALETTES`, and the `LAYOUT` object.
+- **`src/state.js`**: Will manage the application's dynamic state. All state variables (`currentPalette`, `isLive`, `isLowRes`, etc.) will be defined and exported from here, along with functions to modify them.
+- **`src/camera.js`**: Will handle all camera-related functionality, including initialization (`startCameraWithConstraints`) and camera switching logic.
+- **`src/palette.js`**: Will be responsible for palette management, including loading palettes from sources (`getColorsFromSource`), applying them (`loadPalette`), and updating the UI theme (`displayPalette`, `updateTheme`).
+- **`src/ui.js`**: Will manage all user interface interactions and event handling. This includes setting up event listeners for buttons, modals, and handling orientation or resize events.
+- **`src/rendering.js`**: Will contain the core rendering pipeline, including processing video or image frames (`processFrame`) and drawing them to the canvas (`drawScene`, `runLiveView`).
+- **`src/main.js`**: Will serve as the main entry point for the application. It will import necessary modules and call the main `init()` function to start the application.
 
 ## 3. File Migration
 
 - The following existing files and directories will be moved into the new `src/` directory:
-    - `canvas.js` (as a temporary source for refactoring)
-    - `quantizer.js`
-    - `haptic.js`
-    - `libs/`
+  - `canvas.js` (as a temporary source for refactoring)
+  - `quantizer.js`
+  - `haptic.js`
+  - `libs/`
 
 ## 4. HTML Update
 

@@ -1,31 +1,30 @@
-const CACHE_NAME = "tessella-v0.6.0";
-const CACHE_NAME = "tessella-v0.6.0";
+const CACHE_NAME = "tessella-v0.6.1";
 const CACHE_FILES = [
-  './',
-  './canvas.css',
-  './fonts/InterDisplay-Bold.woff2',
-  './fonts/InterDisplay-Italic.woff2',
-  './fonts/InterDisplay-Regular.woff2',
-  './fonts/iconoir/iconoir.css',
-  './fonts/inter.css',
-  './fonts/jersey.css',
-  './fonts/jersey.ttf',
-  './index.html',
-  './libs/idb-keyval.js',
-  './libs/interact.min.js',
-  './manifest.json',
-  './media/favicon.ico',
-  './media/icon.png',
-  './src/camera.js',
-  './src/config.js',
-  './src/dom.js',
-  './src/haptic.js',
-  './src/main.js',
-  './src/palette.js',
-  './src/quantizer.js',
-  './src/rendering.js',
-  './src/state.js',
-  './src/ui.js',
+  "./",
+  "./canvas.css",
+  "./fonts/InterDisplay-Bold.woff2",
+  "./fonts/InterDisplay-Italic.woff2",
+  "./fonts/InterDisplay-Regular.woff2",
+  "./fonts/iconoir/iconoir.css",
+  "./fonts/inter.css",
+  "./fonts/jersey.css",
+  "./fonts/jersey.ttf",
+  "./index.html",
+  "./libs/idb-keyval.js",
+  "./libs/interact.min.js",
+  "./manifest.json",
+  "./media/favicon.ico",
+  "./media/icon.png",
+  "./src/camera.js",
+  "./src/config.js",
+  "./src/dom.js",
+  "./src/haptic.js",
+  "./src/main.js",
+  "./src/palette.js",
+  "./src/quantizer.js",
+  "./src/rendering.js",
+  "./src/state.js",
+  "./src/ui.js",
 ];
 
 // Install event: opens a cache and adds the core files to it.
@@ -51,10 +50,10 @@ self.addEventListener("message", (event) => {
     event.waitUntil(
       caches.open(CACHE_NAME).then((cache) => {
         console.log("Service Worker: Caching palettes dynamically...");
-        return cache.addAll(palettesToCache).catch(err => {
+        return cache.addAll(palettesToCache).catch((err) => {
           console.error("Failed to cache palettes:", err);
         });
-      })
+      }),
     );
   }
 });
@@ -88,7 +87,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-
 // Install event: opens a cache and adds the core files to it.
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -107,7 +105,7 @@ self.addEventListener("install", (event) => {
             throw error;
           }
         }
-        
+
         console.log("All files cached successfully.");
       } catch (error) {
         console.error("Service worker installation failed:", error);

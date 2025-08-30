@@ -1,8 +1,22 @@
 import * as dom from "./dom.js";
 import * as state from "./state.js";
 
+const getPaletteName = (source) => {
+  if (!source) return "";
+  if (source.startsWith("data:")) return "Custom";
+  const filename = source.split("/").pop();
+  return filename.replace(/-32x\.png$/, "").replace(/-/g, " ");
+};
+
 export function displayPalette(palette) {
   dom.palettePreview.innerHTML = "";
+
+  const nameElement = document.createElement("div");
+  nameElement.id = "paletteName";
+  const currentPaletteSource = state.allPalettes[state.currentPaletteIndex];
+  nameElement.textContent = getPaletteName(currentPaletteSource);
+  dom.palettePreview.appendChild(nameElement);
+
   palette.forEach((color) => {
     const swatch = document.createElement("div");
     swatch.className = "swatch";
