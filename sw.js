@@ -1,4 +1,4 @@
-const CACHE_NAME = "tessella-v0.6.1";
+const CACHE_NAME = "tessella-v0.6.3";
 const CACHE_FILES = [
   "./",
   "./canvas.css",
