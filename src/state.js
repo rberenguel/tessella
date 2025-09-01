@@ -9,8 +9,7 @@ export let isDithering = false;
 export let isFrontCamera = false;
 export let isDesktop = false;
 
-export let loadedPalettes = new Map(); // Stores palette source URL -> [ [r,g,b], ... ]
-export let allPalettes = []; // Stores palette source URLs, including custom
+export let allPalettes = []; // Stores palette objects: { name, id, colors, isCustom }
 
 export let portraitHeight = null;
 export let portraitWidth = null;
@@ -49,10 +48,6 @@ export function setFrontCamera(frontCamera) {
 
 export function setDesktop(desktop) {
   isDesktop = desktop;
-}
-
-export function addLoadedPalette(source, colors) {
-  loadedPalettes.set(source, colors);
 }
 
 export function setAllPalettes(palettes) {

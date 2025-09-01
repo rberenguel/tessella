@@ -42,6 +42,12 @@
           accept="image/*"
           style="display: none"
         />
+        <input
+          type="file"
+          id="paletteImageInput"
+          accept="image/*"
+          style="display: none"
+        />
       </main>
     </div>
     <footer id="controls">
@@ -70,7 +76,51 @@
       </div>
     </footer>
     <script src="libs/interact.min.js"></script>
+    <script src="libs/color-thief.umd.js"></script>
     <script src="src/main.js" type="module"></script>
+
+    <div id="paletteExtractorModal" class="modal">
+      <div class="modal-content" id="palette-extractor-modal-content">
+        <span class="close-button">&times;</span>
+        <div id="extractor-container">
+          <h2 class="extractor-title">Create Palette From Image</h2>
+          <div class="extractor-controls">
+            <div>
+              <label for="color-count"
+                ># colors
+                <span id="color-count-value" class="font-bold text-blue-600"
+                  >8</span
+                ></label
+              >
+              <input id="color-count" type="range" min="3" max="24" value="8" />
+            </div>
+          </div>
+          <div id="extractor-result-container">
+            <h3 class="extractor-subtitle">Click colors to include/exclude</h3>
+            <div id="color-matrix"></div>
+            <div class="name-input-container">
+              <input
+                type="text"
+                id="new-palette-name"
+                placeholder="Enter palette name"
+              />
+            </div>
+            <div class="final-palette-container">
+              <canvas id="palette-canvas" class="hidden"></canvas>
+              <img id="palette-image" alt="Generated Color Palette" />
+            </div>
+            <div class="modal-buttons">
+              <button id="cancel-palette-btn">Cancel</button>
+              <button id="save-palette-btn">Save</button>
+            </div>
+          </div>
+          <div id="extractor-initial-message">
+            <p>Your generated palette will appear here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="paletteModal" class="modal">
       <div class="modal-content" id="palette-modal-content">
         <span class="close-button">&times;</span>
@@ -120,10 +170,11 @@
           includes a strip of the active color palette.
         </p>
         <p>
-          <b>Custom Palettes:</b> Use the <b>Upload button</b> to load a custom
+          <b>Custom Palettes:</b> Use the <b>Upload button</b> to load a legacy
           palette. A valid palette is a <b>32xM pixel image</b> where each 32x32
           square is a solid color. The app will automatically extract the colors
-          and save the palette for future use (just one palette).
+          and save the palette for future use (just one palette). Use the
+          <b>Palette button</b> to create new palettes from any image.
         </p>
         <p>
           The full list with links of built-in palettes from Lospec can be found
@@ -149,6 +200,43 @@
           data-font-color="#000000"
           data-coffee-color="#ffffff"
         ></script>
+      </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+      <div class="modal-content" id="confirm-modal-content">
+        <h3 id="confirm-modal-title">Confirm Action</h3>
+        <p id="confirm-modal-text">Are you sure?</p>
+        <div class="modal-buttons">
+          <button id="confirm-modal-cancel-btn">Cancel</button>
+          <button id="confirm-modal-confirm-btn">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+      <div class="modal-content" id="confirm-modal-content">
+        <h3 id="confirm-modal-title">Confirm Deletion</h3>
+        <p id="confirm-modal-text">
+          Are you sure you want to delete this palette?
+        </p>
+        <div class="modal-buttons">
+          <button id="confirm-modal-cancel-btn">Cancel</button>
+          <button id="confirm-modal-confirm-btn">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+      <div class="modal-content" id="confirm-modal-content">
+        <h3 id="confirm-modal-title">Confirm Deletion</h3>
+        <p id="confirm-modal-text">
+          Are you sure you want to delete this palette?
+        </p>
+        <div class="modal-buttons">
+          <button id="confirm-modal-cancel-btn">Cancel</button>
+          <button id="confirm-modal-confirm-btn">Delete</button>
+        </div>
       </div>
     </div>
   </body>

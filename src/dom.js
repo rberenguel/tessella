@@ -2,6 +2,7 @@
 export const video = document.getElementById("videoFeed");
 export const canvas = document.getElementById("displayCanvas");
 export const imageInput = document.getElementById("imageInput");
+export const paletteImageInput = document.getElementById("paletteImageInput");
 export const transitionCanvas = document.getElementById("transitionCanvas");
 export const resToggleBtn = document.getElementById("resToggleBtn");
 export const ditherToggleBtn = document.getElementById("ditherBtn");
@@ -10,6 +11,7 @@ export const shutterBtn = document.getElementById("shutterBtn");
 export const palettePreview = document.getElementById("palettePreview");
 export const modalContent = document.getElementById("modal-content");
 export const loadBtn = document.getElementById("loadBtn");
+export const getPaletteBtn = document.getElementById("getPaletteBtn");
 export const infoModal = document.getElementById("infoModal");
 export const closeButton = document.querySelectorAll(".close-button");
 export const paletteModal = document.getElementById("paletteModal");

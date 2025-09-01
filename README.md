@@ -31,9 +31,10 @@ Tesseŀla is a progressive web app that transforms your device's camera feed int
 
 ### Advanced Actions
 
+- **Extract Palette Button (Palette icon)**: Opens a file picker to process a local image (file, camera, existing picture) to extract a palette to save.
 - **Open Palette Library**: **Long press** the top palette bar to open a modal showing all available palettes for quick selection.
 - **Save or Share Image**: After tapping the shutter to freeze the frame, **long press** anywhere on the image. This will bring up your device's native share sheet, allowing you to save the image or send it to another app.
-- **Upload a Custom Palette**: Create a 32xM or Mx32 pixel PNG file where each 32x32 square is a solid color of your palette. Use the **Upload button** to load it. The app will automatically parse it, save it, and make it available in your palette list.
+- **Upload a Custom Palette**: Create a 32xM or Mx32 pixel PNG file where each 32x32 square is a solid color of your palette. Use the **Upload button** to load it. The app will automatically parse it, save it, and make it available in your palette list. This is a separate functionality from the palette extraction functionality described above.
 
 ---
 

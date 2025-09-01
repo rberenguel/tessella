@@ -1,4 +1,4 @@
-import { get } from "../libs/idb-keyval.js";
+import { get, set, del } from "../libs/idb-keyval.js";
 import { initHaptic } from "./haptic.js";
 import * as dom from "./dom.js";
 import * as state from "./state.js";
@@ -78,35 +78,54 @@ async function init() {
     return;
   }
 
-  const palettePromises = config.BUILT_IN_PALETTES.map(async (paletteSrc) => {
-    const colors = await getColorsFromSource(paletteSrc);
-    state.addLoadedPalette(paletteSrc, colors);
-  });
-  await Promise.all(palettePromises);
-  state.setAllPalettes([...config.BUILT_IN_PALETTES]);
+  // --- Palette Loading Refactor ---
 
-  const customPalette = await get("customPalette");
-  if (customPalette) {
-    state.addLoadedPalette(
-      customPalette,
-      await getColorsFromSource(customPalette),
-    );
-    state.allPalettes.push(customPalette);
+  // 1. Load built-in palettes
+  const builtInPalettes = await Promise.all(
+    config.BUILT_IN_PALETTES.map(async (src) => {
+      const colors = await getColorsFromSource(src);
+      const name = src
+        .split("/")
+        .pop()
+        .replace(/-32x\.png$/, "")
+        .replace(/-/g, " ");
+      return { id: src, name, colors, isCustom: false };
+    }),
+  );
+  state.setAllPalettes(builtInPalettes);
+
+  // 2. Migration for old custom palette
+  const oldCustomPalette = await get("customPalette");
+  if (oldCustomPalette) {
+    const colors = await getColorsFromSource(oldCustomPalette);
+    const newCustomPalette = {
+      id: `custom-${Date.now()}`,
+      name: "My Palette",
+      colors,
+      isCustom: true,
+    };
+    await set("customPalettes", [newCustomPalette]);
+    await del("customPalette");
+    console.log("Migrated old custom palette.");
   }
 
-  const savedPaletteSrc =
-    localStorage.getItem("savedPalette") || state.allPalettes[0];
-  try {
-    if (!state.allPalettes.includes(savedPaletteSrc)) {
-      throw new Error("Saved palette not found in available palettes.");
-    }
-    state.setCurrentPaletteIndex(state.allPalettes.indexOf(savedPaletteSrc));
-    await loadPalette(savedPaletteSrc);
-  } catch (err) {
-    console.warn("Palette could not be found or is invalid, defaulting.", err);
-    state.setCurrentPaletteIndex(0);
-    await loadPalette(state.allPalettes[0]);
+  // 3. Load new custom palettes
+  const customPalettes = (await get("customPalettes")) || [];
+  state.allPalettes.push(...customPalettes);
+
+  // 4. Load last used palette
+  const savedPaletteId =
+    localStorage.getItem("savedPalette") || state.allPalettes[0].id;
+  let paletteIndex = state.allPalettes.findIndex(
+    (p) => p.id === savedPaletteId,
+  );
+  if (paletteIndex === -1) {
+    console.warn("Saved palette not found, defaulting to first palette.");
+    paletteIndex = 0;
   }
+
+  state.setCurrentPaletteIndex(paletteIndex);
+  await loadPalette(state.allPalettes[paletteIndex]);
 
   setupEventListeners();
 }

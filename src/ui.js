@@ -1,11 +1,29 @@
 import { get, set } from "../libs/idb-keyval.js";
 import * as dom from "./dom.js";
 import * as state from "./state.js";
-import * as config from "./config.js";
 import { triggerHaptic } from "./haptic.js";
-import { loadPalette, getColorsFromSource } from "./palette.js";
+import { loadPalette } from "./palette.js";
 import { drawScene, runLiveView } from "./rendering.js";
 import { startCameraWithConstraints, getCameraConstraints } from "./camera.js";
+
+// --- DOM Elements for Palette Extractor ---
+const extractorModal = document.getElementById("paletteExtractorModal");
+const colorCountSlider = document.getElementById("color-count");
+const colorCountValue = document.getElementById("color-count-value");
+const paletteCanvas = document.getElementById("palette-canvas");
+const paletteImage = document.getElementById("palette-image");
+const resultContainer = document.getElementById("extractor-result-container");
+const initialMessage = document.getElementById("extractor-initial-message");
+const colorMatrix = document.getElementById("color-matrix");
+const savePaletteBtn = document.getElementById("save-palette-btn");
+const cancelPaletteBtn = document.getElementById("cancel-palette-btn");
+const newPaletteNameInput = document.getElementById("new-palette-name");
+
+// --- Palette Extractor State ---
+let fullPalette = [];
+let selectedColors = [];
+let processing = false;
+const colorThief = new ColorThief();
 
 async function handleShutterClickMobile() {
   state.setLive(!state.isLive);
@@ -32,29 +50,11 @@ async function handleImageFile(event) {
   reader.onload = (e) => {
     const img = new Image();
     img.onload = async () => {
-      if (img.width === 32 || img.height === 32) {
-        const dataUrl = img.src;
-        await set("customPalette", dataUrl); // Save the new palette
-        await loadPalette(dataUrl); // Load it
-        alert("Custom palette loaded and saved!");
-
-        let palettes = state.allPalettes.filter(
-          (p) => !p.startsWith("data:image"),
-        );
-        palettes.push(dataUrl);
-        state.setAllPalettes(palettes);
-        state.setCurrentPaletteIndex(state.allPalettes.length - 1);
-
-        const source = state.isLive
-          ? dom.video
-          : state.frozenFrameSource || document.createElement("canvas");
-        await drawScene(source);
-      } else {
-        state.setLive(false);
-        dom.shutterBtn.classList.add("active");
-        state.setFrozenFrameSource(img);
-        await drawScene(state.frozenFrameSource);
-      }
+      // This function now only processes images to be pixelated, not palettes.
+      state.setLive(false);
+      dom.shutterBtn.classList.add("active");
+      state.setFrozenFrameSource(img);
+      await drawScene(state.frozenFrameSource);
     };
     img.src = e.target.result;
   };
@@ -71,9 +71,150 @@ const landscaping = () => {
   }
 };
 
+// --- Palette Extractor Logic ---
+
+function getLuminosity(rgb) {
+  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+}
+
+function drawPaletteImage() {
+  const ctx = paletteCanvas.getContext("2d");
+  const blockSize = 32;
+
+  if (selectedColors.length === 0) {
+    paletteCanvas.width = blockSize;
+    paletteCanvas.height = blockSize;
+    ctx.clearRect(0, 0, blockSize, blockSize);
+  } else {
+    paletteCanvas.width = selectedColors.length * blockSize;
+    paletteCanvas.height = blockSize;
+    selectedColors.forEach((color, i) => {
+      ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+      ctx.fillRect(i * blockSize, 0, blockSize, blockSize);
+    });
+  }
+  paletteImage.src = paletteCanvas.toDataURL("image/png");
+  savePaletteBtn.disabled = selectedColors.length === 0;
+}
+
+function toggleColorSelection(index, swatchElement) {
+  swatchElement.classList.toggle("selected");
+  const color = fullPalette[index];
+  const isSelected = swatchElement.classList.contains("selected");
+
+  if (isSelected) {
+    selectedColors.push(color);
+  } else {
+    selectedColors = selectedColors.filter(
+      (c) => JSON.stringify(c) !== JSON.stringify(color),
+    );
+  }
+
+  selectedColors.sort((a, b) => getLuminosity(a) - getLuminosity(b));
+  drawPaletteImage();
+}
+
+function renderColorMatrix() {
+  colorMatrix.innerHTML = "";
+  fullPalette.forEach((color, index) => {
+    const swatch = document.createElement("div");
+    swatch.className = "color-swatch selected";
+    swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    swatch.dataset.colorIndex = index;
+
+    swatch.addEventListener("click", () => {
+      toggleColorSelection(index, swatch);
+    });
+
+    colorMatrix.appendChild(swatch);
+  });
+}
+
+async function handlePaletteImageFile(event) {
+  if (processing || event.target.files.length === 0) return;
+  state.setLive(false);
+  processing = true;
+  const file = event.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    const img = new Image();
+
+    img.onload = () => {
+      extractorModal.style.display = "block";
+      initialMessage.classList.add("hidden");
+      resultContainer.classList.add("hidden");
+
+      setTimeout(() => {
+        const k = parseInt(colorCountSlider.value, 10);
+        fullPalette = colorThief.getPalette(img, k);
+        fullPalette.sort((a, b) => getLuminosity(a) - getLuminosity(b));
+        selectedColors = [...fullPalette];
+
+        renderColorMatrix();
+        drawPaletteImage();
+
+        resultContainer.classList.remove("hidden");
+        processing = false;
+      }, 50);
+    };
+    img.crossOrigin = "Anonymous";
+    img.src = e.target.result;
+  };
+
+  if (file) {
+    reader.readAsDataURL(file);
+  } else {
+    processing = false;
+  }
+}
+
+async function saveCustomPalette() {
+  const name = newPaletteNameInput.value.trim();
+  if (!name) {
+    alert("Please enter a name for the palette.");
+    return;
+  }
+  if (selectedColors.length === 0) {
+    alert("Cannot save an empty palette.");
+    return;
+  }
+
+  const newPalette = {
+    id: `custom-${Date.now()}`,
+    name,
+    colors: selectedColors,
+    isCustom: true,
+  };
+
+  const customPalettes = (await get("customPalettes")) || [];
+  customPalettes.push(newPalette);
+  await set("customPalettes", customPalettes);
+
+  state.allPalettes.push(newPalette);
+  state.setCurrentPaletteIndex(state.allPalettes.length - 1);
+  await loadPalette(newPalette);
+
+  // Redraw scene with new palette
+  const source = state.isLive
+    ? dom.video
+    : state.frozenFrameSource || document.createElement("canvas");
+  drawScene(source);
+
+  // Reset and close modal
+  newPaletteNameInput.value = "";
+  extractorModal.style.display = "none";
+}
+
+// --- Main Event Listeners Setup ---
+
 export function setupEventListeners() {
   dom.imageInput.addEventListener("change", handleImageFile);
   dom.loadBtn.addEventListener("click", () => dom.imageInput.click());
+  dom.getPaletteBtn.addEventListener("click", () =>
+    dom.paletteImageInput.click(),
+  );
+  dom.paletteImageInput.addEventListener("change", handlePaletteImageFile);
 
   if (state.isDesktop) {
     dom.shutterBtn.addEventListener("click", () => dom.imageInput.click());
@@ -123,9 +264,7 @@ export function setupEventListeners() {
   document
     .getElementById("palette")
     .addEventListener("click", async (event) => {
-      if (event.target.closest("#settingsBtn")) {
-        return;
-      }
+      if (event.target.closest("#settingsBtn")) return;
       triggerHaptic();
       state.setCurrentPaletteIndex(
         (state.currentPaletteIndex + 1) % state.allPalettes.length,
@@ -137,24 +276,7 @@ export function setupEventListeners() {
       drawScene(source);
     });
 
-  const handleOrientationAndResize = () => {
-    landscaping();
-    if (isLandscape()) {
-      dom.canvas.width = state.portraitHeight;
-      dom.canvas.height = state.portraitWidth;
-    } else {
-      dom.canvas.width = state.portraitWidth;
-      dom.canvas.height = state.portraitHeight;
-    }
-    const source = state.isLive
-      ? dom.video
-      : state.frozenFrameSource || document.createElement("canvas");
-    drawScene(source);
-  };
-
-  window.addEventListener("resize", handleOrientationAndResize);
-  window.addEventListener("load", handleOrientationAndResize);
-
+  // --- Long Press & Share ---
   let pressTimer = null;
   const startPress = (e) => {
     e.preventDefault();
@@ -242,7 +364,6 @@ export function setupEventListeners() {
       }
     }, 500);
   };
-
   const cancelPress = () => clearTimeout(pressTimer);
   dom.canvas.addEventListener("mousedown", startPress);
   dom.canvas.addEventListener("touchstart", startPress, { passive: false });
@@ -252,33 +373,109 @@ export function setupEventListeners() {
   dom.canvas.addEventListener("touchcancel", cancelPress);
   dom.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
-  const paletteModalCloseBtn = dom.paletteModal.querySelector(".close-button");
-
+  // --- Modal Logic ---
   let wasLiveBeforeModal = false;
+
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmModalTitle = document.getElementById("confirm-modal-title");
+  const confirmModalText = document.getElementById("confirm-modal-text");
+  const confirmModalConfirmBtn = document.getElementById(
+    "confirm-modal-confirm-btn",
+  );
+  const confirmModalCancelBtn = document.getElementById(
+    "confirm-modal-cancel-btn",
+  );
+
+  function showConfirmationModal(title, text, onConfirm) {
+    confirmModalTitle.textContent = title;
+    confirmModalText.textContent = text;
+    confirmModal.style.display = "block";
+
+    const confirmHandler = () => {
+      onConfirm();
+      confirmModal.style.display = "none";
+      confirmModalConfirmBtn.removeEventListener("click", confirmHandler);
+      confirmModalCancelBtn.removeEventListener("click", cancelHandler);
+    };
+
+    const cancelHandler = () => {
+      confirmModal.style.display = "none";
+      confirmModalConfirmBtn.removeEventListener("click", confirmHandler);
+      confirmModalCancelBtn.removeEventListener("click", cancelHandler);
+    };
+
+    confirmModalConfirmBtn.addEventListener("click", confirmHandler);
+    confirmModalCancelBtn.addEventListener("click", cancelHandler);
+  }
+
+  async function deleteCustomPalette(paletteIdToDelete) {
+    // Remove from state
+    const paletteIndex = state.allPalettes.findIndex(
+      (p) => p.id === paletteIdToDelete,
+    );
+    if (paletteIndex === -1) return;
+
+    state.allPalettes.splice(paletteIndex, 1);
+
+    // Remove from storage
+    const customPalettes = (await get("customPalettes")) || [];
+    const updatedCustomPalettes = customPalettes.filter(
+      (p) => p.id !== paletteIdToDelete,
+    );
+    await set("customPalettes", updatedCustomPalettes);
+
+    // If the deleted palette was the current one, switch to the first palette
+    if (state.currentPaletteIndex === paletteIndex) {
+      state.setCurrentPaletteIndex(0);
+      await loadPalette(state.allPalettes[0]);
+      const source = state.isLive
+        ? dom.video
+        : state.frozenFrameSource || document.createElement("canvas");
+      drawScene(source);
+    } else if (state.currentPaletteIndex > paletteIndex) {
+      // Adjust index if a palette before the current one was deleted
+      state.setCurrentPaletteIndex(state.currentPaletteIndex - 1);
+    }
+
+    // Refresh the modal view
+    populateAndShowPaletteModal();
+  }
+
+  // Palette Grid Modal
+  const paletteModalCloseBtn = dom.paletteModal.querySelector(".close-button");
   const populateAndShowPaletteModal = async () => {
     wasLiveBeforeModal = state.isLive;
     state.setLive(false);
     dom.paletteGrid.innerHTML = "";
 
-    const getPaletteName = (source) => {
-      if (source.startsWith("data:")) return "Custom";
-      const filename = source.split("/").pop();
-      return filename.replace(/-32x\.png$/, "").replace(/-/g, " ");
-    };
-
-    for (const [index, source] of state.allPalettes.entries()) {
+    for (const [index, palette] of state.allPalettes.entries()) {
       const item = document.createElement("div");
       item.className = "palette-grid-item";
 
+      if (palette.isCustom) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-palette-btn iconoir-xmark";
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation(); // Prevent the palette from being selected
+          showConfirmationModal(
+            "Delete Palette",
+            `Are you sure you want to delete "${palette.name}"?`,
+            () => {
+              deleteCustomPalette(palette.id);
+            },
+          );
+        });
+        item.appendChild(deleteBtn);
+      }
+
       const name = document.createElement("div");
       name.className = "palette-name";
-      name.textContent = getPaletteName(source);
+      name.textContent = palette.name;
       item.appendChild(name);
 
       const swatchContainer = document.createElement("div");
       swatchContainer.className = "mini-swatch-container";
-      const colors = state.loadedPalettes.get(source);
-      colors.forEach((color) => {
+      palette.colors.forEach((color) => {
         const swatch = document.createElement("div");
         swatch.className = "mini-swatch";
         swatch.style.backgroundColor = `rgb(${color.join(",")})`;
@@ -288,7 +485,7 @@ export function setupEventListeners() {
 
       item.addEventListener("click", async () => {
         state.setCurrentPaletteIndex(index);
-        await loadPalette(source);
+        await loadPalette(palette);
         const redrawSource = state.isLive
           ? dom.video
           : state.frozenFrameSource || document.createElement("canvas");
@@ -305,9 +502,7 @@ export function setupEventListeners() {
   };
 
   interact("#palette").on("hold", async (event) => {
-    if (event.target.closest("#settingsBtn")) {
-      return;
-    }
+    if (event.target.closest("#settingsBtn")) return;
     await populateAndShowPaletteModal();
   });
 
@@ -319,53 +514,60 @@ export function setupEventListeners() {
     }
   });
 
+  // Info Modal
   dom.settingsBtn.addEventListener("click", () => {
     dom.infoModal.style.display = "block";
     state.setLive(false);
   });
-
-  Array.from(dom.closeButton).map((c) =>
+  Array.from(dom.closeButton).forEach((c) =>
     c.addEventListener("click", () => {
       dom.infoModal.style.display = "none";
     }),
   );
-
   window.addEventListener("click", (event) => {
     if (event.target == dom.infoModal) {
       dom.infoModal.style.display = "none";
     }
   });
 
-  setInterval(() => {
-    landscaping();
-    let resized = false;
-    if (isLandscape()) {
-      document.body.classList.add("landscape");
-      if (
-        dom.canvas.width !== state.portraitHeight ||
-        dom.canvas.height !== state.portraitWidth
-      ) {
-        dom.canvas.width = state.portraitHeight;
-        dom.canvas.height = state.portraitWidth;
-        resized = true;
-      }
-    } else {
-      document.body.classList.remove("landscape");
-      if (
-        dom.canvas.width !== state.portraitWidth ||
-        dom.canvas.height !== state.portraitHeight
-      ) {
-        dom.canvas.width = state.portraitWidth;
-        dom.canvas.height = state.portraitHeight;
-        resized = true;
-      }
-    }
+  // Palette Extractor Modal
+  const extractorModalCloseBtn = extractorModal.querySelector(".close-button");
+  extractorModalCloseBtn.addEventListener("click", () => {
+    extractorModal.style.display = "none";
+  });
+  cancelPaletteBtn.addEventListener("click", () => {
+    extractorModal.style.display = "none";
+  });
+  savePaletteBtn.addEventListener("click", saveCustomPalette);
+  colorCountSlider.addEventListener("input", (e) => {
+    colorCountValue.textContent = e.target.value;
+  });
+  colorCountSlider.addEventListener("change", () => {
+    // Re-trigger extraction with the new count
+    handlePaletteImageFile({ target: dom.paletteImageInput });
+  });
 
-    if (resized) {
+  // --- Resize & Orientation ---
+  const handleOrientationAndResize = () => {
+    landscaping();
+    let newWidth, newHeight;
+    if (isLandscape()) {
+      newWidth = state.portraitHeight;
+      newHeight = state.portraitWidth;
+    } else {
+      newWidth = state.portraitWidth;
+      newHeight = state.portraitHeight;
+    }
+    if (dom.canvas.width !== newWidth || dom.canvas.height !== newHeight) {
+      dom.canvas.width = newWidth;
+      dom.canvas.height = newHeight;
       const source = state.isLive
         ? dom.video
         : state.frozenFrameSource || document.createElement("canvas");
       drawScene(source);
     }
-  }, 500);
+  };
+  window.addEventListener("resize", handleOrientationAndResize);
+  window.addEventListener("load", handleOrientationAndResize);
+  setInterval(handleOrientationAndResize, 500);
 }

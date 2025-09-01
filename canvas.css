@@ -517,6 +517,7 @@ body.landscape #buttonContainer {
 }
 
 .palette-grid-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -529,6 +530,19 @@ body.landscape #buttonContainer {
     border-color 0.2s ease;
   height: fit-content;
   align-items: center;
+}
+
+.delete-palette-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px;
+  display: block; /* Always visible */
 }
 
 .palette-name {
@@ -559,4 +573,196 @@ body.landscape #buttonContainer {
   width: 100%;
   padding-bottom: 100%; /* Creates a square aspect ratio */
   border-radius: 3px;
+}
+
+/* --- Palette Extractor Modal --- */
+#palette-extractor-modal-content {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  margin: 1em 0.5em;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 0.2em;
+  padding: 0.3em;
+}
+
+#extractor-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.extractor-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-family: "jersey", sans-serif;
+  margin-bottom: 0.5rem;
+}
+
+.extractor-controls {
+  background-color: #2c2c2e;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.extractor-controls label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.extractor-controls input[type="range"] {
+  width: 100%;
+}
+
+#color-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  background-color: #2c2c2e;
+  border-radius: 8px;
+}
+
+.color-swatch {
+  width: 90%;
+  padding-bottom: 100%;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.color-swatch:not(.selected) {
+  transform: scale(0.95);
+}
+.color-swatch:not(.selected)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 142%; /* Roughly 100% * sqrt(2) to cover the diagonal */
+  height: 2px;
+  backdrop-filter: invert(1);
+  /* Center the line and rotate it into position */
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+/*
+.color-swatch:not(.selected)::after {
+  content: " ";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+}
+*/
+.final-palette-container {
+  background-color: #2c2c2e;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50px;
+}
+
+#palette-image {
+  background-color: #fff;
+}
+
+.name-input-container {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+#new-palette-name {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: #fff;
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.modal-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+#cancel-palette-btn {
+  background-color: #444;
+  color: #fff;
+}
+
+#cancel-palette-btn:hover {
+  background-color: #555;
+}
+
+#save-palette-btn {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+#save-palette-btn:hover {
+  background-color: #4a90e2;
+}
+
+#save-palette-btn:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+/* --- Confirmation Modal --- */
+#confirm-modal-content {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  font-family: "Inter", sans-serif;
+  text-align: center;
+  padding: 2rem;
+  margin: 30% auto;
+}
+
+#confirm-modal-content h3 {
+  margin-top: 0;
+}
+
+#confirm-modal-confirm-btn {
+  background-color: #e23d28;
+  color: #fff;
 }
