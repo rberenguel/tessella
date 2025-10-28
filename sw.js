@@ -1,4 +1,4 @@
-const CACHE_NAME = "tessella-v0.7.0";
+const CACHE_NAME = "tessella-v0.7.2-permissions-fix";
 const CACHE_FILES = [
   "./",
   "./canvas.css",
@@ -27,18 +27,43 @@ const CACHE_FILES = [
   "./src/ui.js",
 ];
 
-// Install event: opens a cache and adds the core files to it.
+// Install event: cache files and skip waiting to activate immediately
 self.addEventListener("install", (event) => {
+  console.log("Service Worker: Installing...");
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        console.log("Cache opened. Caching app shell...");
+        console.log("Service Worker: Cache opened. Caching app shell...");
         await cache.addAll(CACHE_FILES);
-        console.log("All app shell files cached successfully.");
+        console.log("Service Worker: All app shell files cached successfully.");
+        // Skip waiting to activate immediately
+        await self.skipWaiting();
       } catch (error) {
         console.error("Service worker installation failed:", error);
       }
+    })(),
+  );
+});
+
+// Activate event: claim clients immediately and clean up old caches
+self.addEventListener("activate", (event) => {
+  console.log("Service Worker: Activating...");
+  event.waitUntil(
+    (async () => {
+      // Delete old caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log(`Service Worker: Deleting old cache: ${cacheName}`);
+            return caches.delete(cacheName);
+          }
+        }),
+      );
+      // Take control of all pages immediately
+      await self.clients.claim();
+      console.log("Service Worker: Activated and claimed clients.");
     })(),
   );
 });
@@ -58,87 +83,42 @@ self.addEventListener("message", (event) => {
   }
 });
 
-// Fetch event: serves assets from cache if available, otherwise fetches from network.
+// Fetch event: Network-first strategy with cache fallback
+// This ensures we always try to get fresh content, but fall back to cache if offline
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache hit - return response
-      if (response) {
-        return response;
-      }
-      return fetch(event.request);
-    }),
-  );
-});
-
-// Activate event: cleans up old caches.
-self.addEventListener("activate", (event) => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        }),
-      );
-    }),
-  );
-});
-
-// Install event: opens a cache and adds the core files to it.
-self.addEventListener("install", (event) => {
-  event.waitUntil(
     (async () => {
       try {
-        const cache = await caches.open(CACHE_NAME);
-        console.log("Cache opened. Caching files...");
+        // Try network first
+        const networkResponse = await fetch(event.request);
 
-        for (const url of CACHE_FILES) {
-          try {
-            await cache.add(url);
-          } catch (error) {
-            console.error(`Failed to cache: ${url}`, error);
-            // If one file fails, you might want the whole installation to fail.
-            // Re-throwing the error will cause the service worker installation to fail.
-            throw error;
+        // If successful, update cache with the new version
+        if (networkResponse && networkResponse.status === 200) {
+          const cache = await caches.open(CACHE_NAME);
+          // Only cache GET requests
+          if (event.request.method === "GET") {
+            cache.put(event.request, networkResponse.clone());
           }
         }
 
-        console.log("All files cached successfully.");
+        return networkResponse;
       } catch (error) {
-        console.error("Service worker installation failed:", error);
+        // Network failed, try cache
+        console.log(
+          `Service Worker: Network failed for ${event.request.url}, trying cache...`,
+        );
+        const cachedResponse = await caches.match(event.request);
+
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // If both network and cache fail, return error
+        console.error(
+          `Service Worker: No cached response for ${event.request.url}`,
+        );
+        throw error;
       }
     })(),
-  );
-});
-
-// Fetch event: serves assets from cache if available, otherwise fetches from network.
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache hit - return response
-      if (response) {
-        return response;
-      }
-      return fetch(event.request);
-    }),
-  );
-});
-
-// Activate event: cleans up old caches.
-self.addEventListener("activate", (event) => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        }),
-      );
-    }),
   );
 });

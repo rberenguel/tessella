@@ -744,6 +744,20 @@ body.landscape #buttonContainer {
   }
 }
 
+@keyframes blink {
+  0%,
+  100% {
+    border-color: #555;
+  }
+  50% {
+    border-color: #e23d28;
+  }
+}
+
+#reverseCameraBtn.blink {
+  animation: blink 1s ease-in-out infinite;
+}
+
 .hidden {
   display: none;
 }

@@ -6,6 +6,29 @@ import { loadPalette } from "./palette.js";
 import { drawScene, runLiveView } from "./rendering.js";
 import { startCameraWithConstraints, getCameraConstraints } from "./camera.js";
 
+// --- Permission UI State Management ---
+let permissionNeededMode = false;
+
+export function setPermissionNeededUI() {
+  permissionNeededMode = true;
+  const iconSpan = dom.reverseCameraBtn.querySelector("span");
+  iconSpan.classList.remove("iconoir-face-id", "iconoir-lens");
+  iconSpan.classList.add("iconoir-camera");
+  dom.reverseCameraBtn.classList.add("blink");
+}
+
+export function clearPermissionNeededUI() {
+  permissionNeededMode = false;
+  const iconSpan = dom.reverseCameraBtn.querySelector("span");
+  iconSpan.classList.remove("iconoir-camera", "blink");
+  // Restore to default environment camera icon
+  iconSpan.classList.add("iconoir-face-id");
+}
+
+export function isPermissionNeededMode() {
+  return permissionNeededMode;
+}
+
 // --- DOM Elements for Palette Extractor ---
 const extractorModal = document.getElementById("paletteExtractorModal");
 const colorCountSlider = document.getElementById("color-count");
@@ -219,7 +242,7 @@ export function setupEventListeners() {
   if (state.isDesktop) {
     dom.shutterBtn.addEventListener("click", () => dom.imageInput.click());
   } else {
-    startCameraWithConstraints(getCameraConstraints("environment"));
+    // Camera start is now handled in main.js based on permission state
     dom.shutterBtn.addEventListener("click", handleShutterClickMobile);
   }
 
@@ -239,7 +262,34 @@ export function setupEventListeners() {
       await drawScene(state.frozenFrameSource);
   });
 
-  dom.reverseCameraBtn.addEventListener("click", () => {
+  dom.reverseCameraBtn.addEventListener("click", async () => {
+    console.log("=== Reverse camera button clicked ===");
+    console.log("Permission needed mode:", permissionNeededMode);
+
+    // Handle permission request mode
+    if (permissionNeededMode) {
+      console.log("Handling permission request - calling camera API NOW");
+      try {
+        // CRITICAL: Call camera API immediately for iOS permission
+        await startCameraWithConstraints(getCameraConstraints("environment"));
+        // Success - clear permission UI and set up normal functionality
+        console.log("Camera started successfully!");
+        triggerHaptic();
+        clearPermissionNeededUI();
+        state.setLive(true);
+        dom.shutterBtn.classList.remove("active");
+      } catch (err) {
+        // Failed - permission denied, keep UI in permission needed state
+        console.error("Permission request failed:", err);
+        console.error("Error name:", err.name);
+        console.error("Error message:", err.message);
+        triggerHaptic();
+        // Button will remain in "Start Camera" state for retry
+      }
+      return;
+    }
+
+    // Normal camera switching behavior
     triggerHaptic();
     state.setFrontCamera(!state.isFrontCamera);
     state.setLive(true);
